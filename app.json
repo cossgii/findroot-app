@@ -3,6 +3,7 @@
     "name": "findroot-app",
     "slug": "findroot-app",
     "version": "1.0.0",
+    "scheme": "findroot",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
@@ -20,6 +21,10 @@
     },
     "web": {
       "favicon": "./assets/favicon.png"
-    }
+    },
+    "plugins": [
+      "expo-router",
+      "expo-secure-store"
+    ]
   }
 }
