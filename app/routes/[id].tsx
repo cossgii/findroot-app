@@ -6,40 +6,73 @@ import {
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAtomValue } from 'jotai';
-import { fetchRoute, fetchComments, postComment } from '../../services/routes';
+import {
+  fetchRoute, fetchComments, postComment, deleteRoute, deleteComment,
+  updateComment, setRepresentative,
+} from '../../services/routes';
 import { toggleLike } from '../../services/likes';
 import { openInMap } from '../../utils/maps';
 import { userAtom } from '../../store/auth';
 import { PURPOSE_LABELS, STOP_LABELS } from '../../types';
-import type { RoutePlace, Comment } from '../../types';
+import { Badge, Button, EmptyText, LikeButton, TopBar } from '../../components/ui';
+import { colors, font, radius } from '../../constants/theme';
+import type { RoutePlace, Comment, Alternative } from '../../types';
+
+function AlternativeItem({ alt }: { alt: Alternative }) {
+  return (
+    <View style={styles.altItem}>
+      <Text style={styles.altName}>{alt.place.name}</Text>
+      {alt.explanation ? <Text style={styles.altExplanation}>{alt.explanation}</Text> : null}
+    </View>
+  );
+}
 
 function StopItem({ stop }: { stop: RoutePlace }) {
+  const [expanded, setExpanded] = useState(false);
+  const hasAlts = stop.alternatives?.length > 0;
   return (
     <View style={styles.stop}>
-      <View style={styles.stopLeft}>
-        <Text style={styles.stopOrder}>{stop.order}</Text>
-      </View>
+      <View style={styles.stopOrder}><Text style={styles.stopOrderText}>{stop.order}</Text></View>
       <View style={styles.stopBody}>
         <View style={styles.stopHeader}>
           <Text style={styles.stopName}>{stop.place.name}</Text>
           <Text style={styles.stopLabel}>{STOP_LABELS[stop.label]}</Text>
         </View>
         {stop.place.address ? <Text style={styles.stopAddress}>{stop.place.address}</Text> : null}
-        <TouchableOpacity
-          style={styles.mapButton}
-          onPress={() => openInMap(stop.place.name, stop.place.latitude, stop.place.longitude)}
-        >
-          <Text style={styles.mapButtonText}>지도에서 보기</Text>
-        </TouchableOpacity>
+        <Button variant="outline" small label="지도에서 보기" onPress={() => openInMap(stop.place.name, stop.place.latitude, stop.place.longitude)} style={styles.mapBtn} />
+        {hasAlts && (
+          <TouchableOpacity style={styles.altToggle} onPress={() => setExpanded((v) => !v)}>
+            <Text style={styles.altToggleText}>대안 장소 {stop.alternatives.length}개 {expanded ? '▲' : '▼'}</Text>
+          </TouchableOpacity>
+        )}
+        {expanded && hasAlts && (
+          <View style={styles.altList}>
+            {stop.alternatives.map((alt) => <AlternativeItem key={alt.id} alt={alt} />)}
+          </View>
+        )}
       </View>
     </View>
   );
 }
 
-function CommentItem({ comment }: { comment: Comment }) {
+function CommentItem({ comment, isOwner, onDelete, onEdit }: {
+  comment: Comment; isOwner: boolean; onDelete: () => void; onEdit: () => void;
+}) {
   return (
     <View style={styles.comment}>
-      <Text style={styles.commentAuthor}>{comment.author.name}</Text>
+      <View style={styles.commentHeader}>
+        <Text style={styles.commentAuthor}>{comment.author.name}</Text>
+        {isOwner && (
+          <View style={styles.commentActions}>
+            <TouchableOpacity onPress={onEdit} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+              <Text style={styles.commentEdit}>수정</Text>
+            </TouchableOpacity>
+            <TouchableOpacity onPress={onDelete} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+              <Text style={styles.commentDelete}>삭제</Text>
+            </TouchableOpacity>
+          </View>
+        )}
+      </View>
       <Text style={styles.commentContent}>{comment.content}</Text>
       <Text style={styles.commentDate}>{new Date(comment.createdAt).toLocaleDateString('ko-KR')}</Text>
     </View>
@@ -54,26 +87,39 @@ export default function RouteDetailScreen() {
   const [commentText, setCommentText] = useState('');
   const [liked, setLiked] = useState<boolean | null>(null);
   const [likeCount, setLikeCount] = useState<number | null>(null);
+  const [editingComment, setEditingComment] = useState<{ id: string; content: string } | null>(null);
 
-  const { data: route, isLoading, isError } = useQuery({
-    queryKey: ['route', id],
-    queryFn: () => fetchRoute(id),
-    enabled: !!id,
-  });
-
-  const { data: comments } = useQuery({
-    queryKey: ['comments', id],
-    queryFn: () => fetchComments(id),
-    enabled: !!id,
-  });
+  const { data: route, isLoading, isError } = useQuery({ queryKey: ['route', id], queryFn: () => fetchRoute(id), enabled: !!id });
+  const { data: comments } = useQuery({ queryKey: ['comments', id], queryFn: () => fetchComments(id), enabled: !!id });
 
   const commentMutation = useMutation({
     mutationFn: (content: string) => postComment(id, content),
-    onSuccess: () => {
-      setCommentText('');
-      queryClient.invalidateQueries({ queryKey: ['comments', id] });
-    },
+    onSuccess: () => { setCommentText(''); queryClient.invalidateQueries({ queryKey: ['comments', id] }); },
     onError: () => Alert.alert('오류', '댓글을 등록하지 못했습니다.'),
+  });
+
+  const updateCommentMutation = useMutation({
+    mutationFn: ({ commentId, content }: { commentId: string; content: string }) => updateComment(id, commentId, content),
+    onSuccess: () => { setEditingComment(null); queryClient.invalidateQueries({ queryKey: ['comments', id] }); },
+    onError: () => Alert.alert('오류', '댓글 수정에 실패했습니다.'),
+  });
+
+  const deleteCommentMutation = useMutation({
+    mutationFn: (commentId: string) => deleteComment(id, commentId),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['comments', id] }),
+    onError: () => Alert.alert('오류', '댓글 삭제에 실패했습니다.'),
+  });
+
+  const deleteRouteMutation = useMutation({
+    mutationFn: () => deleteRoute(id),
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['routes'] }); router.replace('/(tabs)'); },
+    onError: () => Alert.alert('오류', '루트 삭제에 실패했습니다.'),
+  });
+
+  const representativeMutation = useMutation({
+    mutationFn: (val: boolean) => setRepresentative(id, val),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['route', id] }),
+    onError: () => Alert.alert('오류', '대표 루트 설정에 실패했습니다.'),
   });
 
   if (isLoading) return <ActivityIndicator style={{ flex: 1 }} size="large" />;
@@ -81,6 +127,7 @@ export default function RouteDetailScreen() {
 
   const isLiked = liked ?? route.isLiked;
   const count = likeCount ?? route.likesCount;
+  const isOwner = user?.id === route.creatorId;
 
   async function handleLike() {
     if (!user) { Alert.alert('로그인이 필요합니다.'); return; }
@@ -93,10 +140,26 @@ export default function RouteDetailScreen() {
     }
   }
 
-  function handleComment() {
-    if (!commentText.trim()) return;
-    if (!user) { Alert.alert('로그인이 필요합니다.'); return; }
-    commentMutation.mutate(commentText.trim());
+  function handleDeleteRoute() {
+    Alert.alert('루트 삭제', '정말 삭제하시겠습니까?', [
+      { text: '취소', style: 'cancel' },
+      { text: '삭제', style: 'destructive', onPress: () => deleteRouteMutation.mutate() },
+    ]);
+  }
+
+  function handleDeleteComment(commentId: string) {
+    Alert.alert('댓글 삭제', '댓글을 삭제하시겠습니까?', [
+      { text: '취소', style: 'cancel' },
+      { text: '삭제', style: 'destructive', onPress: () => deleteCommentMutation.mutate(commentId) },
+    ]);
+  }
+
+  function handleRepresentativeToggle() {
+    const next = !route.isRepresentative;
+    Alert.alert(next ? '대표 루트로 설정' : '대표 루트 해제', next ? '이 루트를 대표 루트로 설정하시겠습니까?' : '대표 루트를 해제하시겠습니까?', [
+      { text: '취소', style: 'cancel' },
+      { text: '확인', onPress: () => representativeMutation.mutate(next) },
+    ]);
   }
 
   const sortedPlaces = [...route.places].sort((a, b) => a.order - b.order);
@@ -104,65 +167,78 @@ export default function RouteDetailScreen() {
   return (
     <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <ScrollView style={styles.container}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-          <Text style={styles.backText}>← 뒤로</Text>
-        </TouchableOpacity>
+        <TopBar
+          right={isOwner ? (
+            <>
+              <Button variant="amber" small label={route.isRepresentative ? '★ 대표' : '☆ 대표'} onPress={handleRepresentativeToggle} loading={representativeMutation.isPending} />
+              <Button variant="outline" small label="수정" onPress={() => router.push(`/edit-route/${id}`)} />
+              <Button variant="danger" small label="삭제" onPress={handleDeleteRoute} loading={deleteRouteMutation.isPending} />
+            </>
+          ) : undefined}
+        />
 
-        {/* 루트 헤더 */}
         <View style={styles.section}>
           <View style={styles.routeHeader}>
             <Text style={styles.routeName}>{route.name}</Text>
-            <Text style={styles.badge}>{PURPOSE_LABELS[route.purpose]}</Text>
+            <Badge label={PURPOSE_LABELS[route.purpose]} />
           </View>
           <Text style={styles.routeDesc}>{route.description}</Text>
           <TouchableOpacity onPress={() => router.push(`/users/${route.creator.id}`)}>
             <Text style={styles.routeCreator}>by {route.creator.name}</Text>
           </TouchableOpacity>
-
-          <TouchableOpacity style={[styles.likeButton, isLiked && styles.likeButtonActive]} onPress={handleLike}>
-            <Text style={[styles.likeButtonText, isLiked && styles.likeButtonTextActive]}>
-              {isLiked ? '♥' : '♡'} {count}
-            </Text>
-          </TouchableOpacity>
+          <LikeButton liked={isLiked} count={count} onPress={handleLike} />
         </View>
 
-        {/* 경유지 */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>경유지 ({sortedPlaces.length})</Text>
-          {sortedPlaces.map((stop) => (
-            <StopItem key={stop.id} stop={stop} />
-          ))}
+          {sortedPlaces.map((stop) => <StopItem key={stop.id} stop={stop} />)}
         </View>
 
-        {/* 댓글 */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>댓글 ({comments?.totalCount ?? 0})</Text>
-          {comments?.data.map((c) => <CommentItem key={c.id} comment={c} />)}
-          {comments?.data.length === 0 && (
-            <Text style={styles.emptyText}>첫 댓글을 남겨보세요.</Text>
-          )}
+          {comments?.data.map((c) => (
+            <CommentItem
+              key={c.id} comment={c}
+              isOwner={user?.id === c.authorId}
+              onDelete={() => handleDeleteComment(c.id)}
+              onEdit={() => setEditingComment({ id: c.id, content: c.content })}
+            />
+          ))}
+          {comments?.data.length === 0 && <EmptyText>첫 댓글을 남겨보세요.</EmptyText>}
         </View>
 
         <View style={{ height: 80 }} />
       </ScrollView>
 
-      {/* 댓글 입력 */}
-      {user && (
-        <View style={styles.commentInputRow}>
+      {editingComment && (
+        <View style={styles.inputRow}>
           <TextInput
-            style={styles.commentInput}
+            style={styles.input}
+            value={editingComment.content}
+            onChangeText={(v) => setEditingComment((prev) => prev ? { ...prev, content: v } : prev)}
+            multiline autoFocus
+          />
+          <Button variant="outline" small label="취소" onPress={() => setEditingComment(null)} />
+          <Button small label="수정" onPress={() => {
+            if (!editingComment.content.trim()) return;
+            updateCommentMutation.mutate({ commentId: editingComment.id, content: editingComment.content.trim() });
+          }} loading={updateCommentMutation.isPending} />
+        </View>
+      )}
+
+      {user && !editingComment && (
+        <View style={styles.inputRow}>
+          <TextInput
+            style={styles.input}
             placeholder="댓글을 입력하세요"
             value={commentText}
             onChangeText={setCommentText}
             multiline
           />
-          <TouchableOpacity
-            style={styles.submitButton}
-            onPress={handleComment}
-            disabled={commentMutation.isPending}
-          >
-            <Text style={styles.submitButtonText}>등록</Text>
-          </TouchableOpacity>
+          <Button small label="등록" onPress={() => {
+            if (!commentText.trim() || !user) return;
+            commentMutation.mutate(commentText.trim());
+          }} loading={commentMutation.isPending} />
         </View>
       )}
     </KeyboardAvoidingView>
@@ -170,43 +246,37 @@ export default function RouteDetailScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#fff' },
+  container: { flex: 1, backgroundColor: colors.bg.white },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  backButton: { padding: 16, paddingBottom: 0 },
-  backText: { color: '#3B82F6', fontSize: 16 },
-
-  section: { padding: 16, borderBottomWidth: 1, borderBottomColor: '#f0f0f0' },
-  sectionTitle: { fontSize: 18, fontWeight: '700', marginBottom: 12 },
-
+  section: { padding: 16, borderBottomWidth: 1, borderBottomColor: colors.divider },
+  sectionTitle: { fontSize: font['2xl'], fontWeight: '700', marginBottom: 12, color: colors.text.primary },
   routeHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 },
-  routeName: { fontSize: 22, fontWeight: 'bold', flex: 1 },
-  badge: { fontSize: 12, color: '#3B82F6', borderWidth: 1, borderColor: '#3B82F6', borderRadius: 4, paddingHorizontal: 6, paddingVertical: 2, marginLeft: 8 },
-  routeDesc: { fontSize: 15, color: '#444', lineHeight: 22, marginBottom: 6 },
-  routeCreator: { fontSize: 13, color: '#999', marginBottom: 12 },
-  likeButton: { borderWidth: 1, borderColor: '#ddd', borderRadius: 8, paddingVertical: 8, paddingHorizontal: 16, alignSelf: 'flex-start' },
-  likeButtonActive: { borderColor: '#EF4444', backgroundColor: '#FEF2F2' },
-  likeButtonText: { fontSize: 15, color: '#666' },
-  likeButtonTextActive: { color: '#EF4444' },
-
+  routeName: { fontSize: font['3xl'], fontWeight: 'bold', flex: 1, marginRight: 8, color: colors.text.primary },
+  routeDesc: { fontSize: font.lg, color: colors.text.secondary, lineHeight: 22, marginBottom: 6 },
+  routeCreator: { fontSize: font.md, color: colors.text.hint, marginBottom: 12 },
   stop: { flexDirection: 'row', marginBottom: 12, gap: 12 },
-  stopLeft: { width: 28, height: 28, borderRadius: 14, backgroundColor: '#3B82F6', justifyContent: 'center', alignItems: 'center', marginTop: 2 },
-  stopOrder: { color: '#fff', fontWeight: '700', fontSize: 13 },
+  stopOrder: { width: 28, height: 28, borderRadius: 14, backgroundColor: colors.primary, justifyContent: 'center', alignItems: 'center', marginTop: 2 },
+  stopOrderText: { color: '#fff', fontWeight: '700', fontSize: font.md },
   stopBody: { flex: 1, gap: 4 },
   stopHeader: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  stopName: { fontSize: 15, fontWeight: '600', flex: 1 },
-  stopLabel: { fontSize: 11, color: '#888', backgroundColor: '#f3f4f6', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4 },
-  stopAddress: { fontSize: 13, color: '#777' },
-  mapButton: { borderWidth: 1, borderColor: '#3B82F6', borderRadius: 6, paddingVertical: 4, paddingHorizontal: 10, alignSelf: 'flex-start', marginTop: 2 },
-  mapButtonText: { fontSize: 12, color: '#3B82F6' },
-
-  comment: { paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: '#f5f5f5' },
-  commentAuthor: { fontSize: 13, fontWeight: '600', marginBottom: 2 },
-  commentContent: { fontSize: 14, color: '#333', lineHeight: 20 },
-  commentDate: { fontSize: 11, color: '#bbb', marginTop: 4 },
-  emptyText: { color: '#bbb', textAlign: 'center', paddingVertical: 16 },
-
-  commentInputRow: { flexDirection: 'row', padding: 12, borderTopWidth: 1, borderTopColor: '#eee', backgroundColor: '#fff', gap: 8 },
-  commentInput: { flex: 1, borderWidth: 1, borderColor: '#ddd', borderRadius: 8, padding: 10, fontSize: 14, maxHeight: 80 },
-  submitButton: { backgroundColor: '#3B82F6', borderRadius: 8, paddingHorizontal: 14, justifyContent: 'center' },
-  submitButtonText: { color: '#fff', fontWeight: '600', fontSize: 14 },
+  stopName: { fontSize: font.lg, fontWeight: '600', flex: 1, color: colors.text.body },
+  stopLabel: { fontSize: font.xs, color: colors.text.hint, backgroundColor: colors.bg.muted, paddingHorizontal: 6, paddingVertical: 2, borderRadius: radius.sm },
+  stopAddress: { fontSize: font.md, color: colors.text.muted },
+  mapBtn: { alignSelf: 'flex-start', marginTop: 2 },
+  altToggle: { marginTop: 6, alignSelf: 'flex-start' },
+  altToggleText: { fontSize: font.sm, color: colors.text.muted, fontWeight: '500' },
+  altList: { marginTop: 6, paddingLeft: 8, gap: 6 },
+  altItem: { backgroundColor: colors.bg.muted, borderRadius: radius.md, padding: 8, borderLeftWidth: 2, borderLeftColor: colors.border },
+  altName: { fontSize: font.md, fontWeight: '600', color: colors.text.body },
+  altExplanation: { fontSize: font.sm, color: colors.text.muted, marginTop: 2 },
+  comment: { paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: colors.divider },
+  commentHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 2 },
+  commentAuthor: { fontSize: font.md, fontWeight: '600', color: colors.text.primary },
+  commentActions: { flexDirection: 'row', gap: 10 },
+  commentEdit: { fontSize: font.sm, color: colors.primary },
+  commentDelete: { fontSize: font.sm, color: colors.danger },
+  commentContent: { fontSize: font.base, color: colors.text.body, lineHeight: 20 },
+  commentDate: { fontSize: font.xs, color: colors.text.disabled, marginTop: 4 },
+  inputRow: { flexDirection: 'row', padding: 12, borderTopWidth: 1, borderTopColor: colors.borderLight, backgroundColor: colors.bg.white, gap: 8, alignItems: 'center' },
+  input: { flex: 1, borderWidth: 1, borderColor: colors.border, borderRadius: radius.md, padding: 10, fontSize: font.base, maxHeight: 80 },
 });

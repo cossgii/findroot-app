@@ -52,3 +52,17 @@ export async function fetchLikedRoutes(page = 1): Promise<PagedRoutes> {
   const { data } = await api.get('/api/users/me/liked-routes', { params: { page, limit: 12 } });
   return data;
 }
+
+export async function updateMe(payload: { name?: string; image?: string | null }) {
+  const { data } = await api.put('/api/users/me', payload);
+  return data as { id: string; name: string; loginId: string; email: string };
+}
+
+export async function updatePassword(payload: { currentPassword: string; newPassword: string }) {
+  await api.put('/api/users/me/password', payload);
+}
+
+export async function searchUsers(q: string): Promise<UserSummary[]> {
+  const { data } = await api.get('/api/users/search', { params: { q } });
+  return data;
+}

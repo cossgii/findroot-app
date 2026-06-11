@@ -1,7 +1,9 @@
 import { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ScrollView } from 'react-native';
+import { Alert, ScrollView, StyleSheet, Text, TouchableOpacity } from 'react-native';
 import { useRouter } from 'expo-router';
 import { signup } from '../services/auth';
+import { Button, Input } from '../components/ui';
+import { colors, font } from '../constants/theme';
 
 export default function SignupScreen() {
   const router = useRouter();
@@ -35,17 +37,12 @@ export default function SignupScreen() {
   return (
     <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
       <Text style={styles.title}>회원가입</Text>
-
-      <TextInput style={styles.input} placeholder="이름" value={form.name} onChangeText={set('name')} />
-      <TextInput style={styles.input} placeholder="아이디" value={form.loginId} onChangeText={set('loginId')} autoCapitalize="none" />
-      <TextInput style={styles.input} placeholder="이메일" value={form.email} onChangeText={set('email')} keyboardType="email-address" autoCapitalize="none" />
-      <TextInput style={styles.input} placeholder="비밀번호 (8-15자, 영문+숫자+특수문자)" value={form.password} onChangeText={set('password')} secureTextEntry />
-      <TextInput style={styles.input} placeholder="비밀번호 확인" value={form.confirmPassword} onChangeText={set('confirmPassword')} secureTextEntry />
-
-      <TouchableOpacity style={styles.button} onPress={handleSignup} disabled={loading}>
-        <Text style={styles.buttonText}>{loading ? '처리 중...' : '가입하기'}</Text>
-      </TouchableOpacity>
-
+      <Input placeholder="이름" value={form.name} onChangeText={set('name')} style={styles.mb} />
+      <Input placeholder="아이디" value={form.loginId} onChangeText={set('loginId')} autoCapitalize="none" style={styles.mb} />
+      <Input placeholder="이메일" value={form.email} onChangeText={set('email')} keyboardType="email-address" autoCapitalize="none" style={styles.mb} />
+      <Input placeholder="비밀번호 (8-15자, 영문+숫자+특수문자)" value={form.password} onChangeText={set('password')} secureTextEntry style={styles.mb} />
+      <Input placeholder="비밀번호 확인" value={form.confirmPassword} onChangeText={set('confirmPassword')} secureTextEntry style={styles.mb} />
+      <Button label="가입하기" onPress={handleSignup} loading={loading} />
       <TouchableOpacity onPress={() => router.back()} style={styles.link}>
         <Text style={styles.linkText}>이미 계정이 있으신가요? 로그인</Text>
       </TouchableOpacity>
@@ -54,11 +51,9 @@ export default function SignupScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flexGrow: 1, justifyContent: 'center', padding: 24, backgroundColor: '#fff' },
+  container: { flexGrow: 1, justifyContent: 'center', padding: 24, backgroundColor: colors.bg.white },
   title: { fontSize: 28, fontWeight: 'bold', marginBottom: 28, textAlign: 'center' },
-  input: { borderWidth: 1, borderColor: '#ddd', borderRadius: 8, padding: 12, marginBottom: 12, fontSize: 16 },
-  button: { backgroundColor: '#3B82F6', padding: 14, borderRadius: 8, alignItems: 'center', marginTop: 4 },
-  buttonText: { color: '#fff', fontSize: 16, fontWeight: '600' },
+  mb: { marginBottom: 12 },
   link: { marginTop: 20, alignItems: 'center' },
-  linkText: { color: '#3B82F6', fontSize: 14 },
+  linkText: { color: colors.primary, fontSize: font.base },
 });

@@ -10,7 +10,16 @@ export default function ExploreScreen() {
       data={SEOUL_DISTRICTS}
       keyExtractor={(item) => item.id}
       contentContainerStyle={styles.list}
-      ListHeaderComponent={<Text style={styles.heading}>지역 탐색</Text>}
+      ListHeaderComponent={
+        <View>
+          <View style={styles.headingRow}>
+            <Text style={styles.heading}>지역 탐색</Text>
+            <TouchableOpacity style={styles.searchBtn} onPress={() => router.push('/search')}>
+              <Text style={styles.searchBtnText}>사용자 검색</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      }
       numColumns={3}
       renderItem={({ item }) => (
         <TouchableOpacity
@@ -26,7 +35,10 @@ export default function ExploreScreen() {
 
 const styles = StyleSheet.create({
   list: { padding: 16 },
-  heading: { fontSize: 22, fontWeight: 'bold', marginBottom: 16 },
+  headingRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 },
+  heading: { fontSize: 22, fontWeight: 'bold' },
+  searchBtn: { borderWidth: 1, borderColor: '#3B82F6', borderRadius: 20, paddingHorizontal: 14, paddingVertical: 7 },
+  searchBtnText: { color: '#3B82F6', fontSize: 13, fontWeight: '600' },
   chip: {
     flex: 1,
     margin: 4,

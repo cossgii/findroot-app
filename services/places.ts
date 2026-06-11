@@ -14,7 +14,7 @@ export async function searchPlaces(params?: SearchPlacesParams): Promise<SearchP
   return data;
 }
 
-type CreatePlacePayload = {
+type PlacePayload = {
   name: string;
   latitude: number;
   longitude: number;
@@ -25,7 +25,31 @@ type CreatePlacePayload = {
   category: PlaceCategory;
 };
 
-export async function createPlace(payload: CreatePlacePayload): Promise<Place> {
+export async function createPlace(payload: PlacePayload): Promise<Place> {
   const { data } = await api.post('/api/places', payload);
+  return data;
+}
+
+export async function updatePlace(placeId: string, payload: Partial<PlacePayload>): Promise<Place> {
+  const { data } = await api.put(`/api/places/${placeId}`, payload);
+  return data;
+}
+
+export async function deletePlace(placeId: string): Promise<void> {
+  await api.delete(`/api/places/${placeId}`);
+}
+
+export async function checkPlaceExists(address: string): Promise<boolean> {
+  const { data } = await api.get('/api/places/exists', { params: { address } });
+  return data.exists;
+}
+
+export async function fetchPlaceLocations(district?: string) {
+  const { data } = await api.get('/api/places/locations', { params: district ? { district } : undefined });
+  return data;
+}
+
+export async function fetchAllMyPlaces(userId: string): Promise<Place[]> {
+  const { data } = await api.get(`/api/users/${userId}/places/all`);
   return data;
 }
