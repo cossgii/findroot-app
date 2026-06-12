@@ -1,5 +1,5 @@
 import { api } from '../lib/api';
-import type { Route, CommentsResponse, Comment, RoutePurpose, RouteStopLabel } from '../types';
+import type { Route, CommentsResponse, Comment, RoutePurpose, RouteStopLabel, Alternative } from '../types';
 
 type RoutePayload = {
   name: string;
@@ -56,8 +56,23 @@ export async function setRepresentative(routeId: string, isRepresentative: boole
   await api.patch(`/api/routes/${routeId}/representative`, { isRepresentative });
 }
 
+export async function addAlternative(routeId: string, routePlaceId: string, payload: { placeId: string; explanation: string }): Promise<Alternative> {
+  const { data } = await api.post(`/api/routes/${routeId}/places/${routePlaceId}/alternatives`, payload);
+  return data;
+}
+
+export async function updateAlternativeExplanation(routeId: string, routePlaceId: string, alternativeId: string, explanation: string): Promise<Alternative> {
+  const { data } = await api.put(`/api/routes/${routeId}/places/${routePlaceId}/alternatives/${alternativeId}`, { explanation });
+  return data;
+}
+
+export async function deleteAlternative(routeId: string, routePlaceId: string, alternativeId: string): Promise<void> {
+  await api.delete(`/api/routes/${routeId}/places/${routePlaceId}/alternatives/${alternativeId}`);
+}
+
 type RouteLocationsParams = {
   districtId?: string;
+  sort?: 'recent' | 'likes';
   page?: number;
   limit?: number;
   purpose?: string;

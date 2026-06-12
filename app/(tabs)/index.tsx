@@ -1,31 +1,45 @@
-import { ActivityIndicator, FlatList, StyleSheet, Text, View } from 'react-native';
-import { useQuery } from '@tanstack/react-query';
-import { fetchFeaturedRoutes } from '../../services/routes';
-import { RouteCard } from '../../components';
-import { colors, font } from '../../constants/theme';
+import { View, Text, FlatList, StyleSheet, TouchableOpacity } from 'react-native';
+import { useRouter } from 'expo-router';
+import { Screen } from '../../components/ui';
+import { SEOUL_DISTRICTS } from '../../constants/districts';
 
 export default function HomeScreen() {
-  const { data, isLoading, isError } = useQuery({
-    queryKey: ['routes', 'featured'],
-    queryFn: fetchFeaturedRoutes,
-  });
-
-  if (isLoading) return <ActivityIndicator style={{ flex: 1 }} size="large" />;
-  if (isError) return <View style={styles.center}><Text>추천 루트를 불러오지 못했습니다.</Text></View>;
+  const router = useRouter();
 
   return (
+    <Screen>
     <FlatList
-      data={data}
+      data={SEOUL_DISTRICTS}
       keyExtractor={(item) => item.id}
       contentContainerStyle={styles.list}
-      ListHeaderComponent={<Text style={styles.heading}>추천 루트</Text>}
-      renderItem={({ item }) => <RouteCard route={item} showCreator />}
+      ListHeaderComponent={
+        <View style={styles.headingRow}>
+          <Text style={styles.heading}>지역 탐색</Text>
+          <TouchableOpacity style={styles.searchBtn} onPress={() => router.push('/search')}>
+            <Text style={styles.searchBtnText}>사용자 검색</Text>
+          </TouchableOpacity>
+        </View>
+      }
+      numColumns={3}
+      renderItem={({ item }) => (
+        <TouchableOpacity
+          style={styles.chip}
+          onPress={() => router.push(`/districts/${item.id}?name=${encodeURIComponent(item.name)}`)}
+        >
+          <Text style={styles.chipText}>{item.name}</Text>
+        </TouchableOpacity>
+      )}
     />
+    </Screen>
   );
 }
 
 const styles = StyleSheet.create({
-  list: { padding: 16, gap: 12 },
-  center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  heading: { fontSize: font['3xl'], fontWeight: 'bold', marginBottom: 8, color: colors.text.primary },
+  list: { padding: 16 },
+  headingRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 },
+  heading: { fontSize: 22, fontWeight: 'bold' },
+  searchBtn: { borderWidth: 1, borderColor: '#3B82F6', borderRadius: 20, paddingHorizontal: 14, paddingVertical: 7 },
+  searchBtnText: { color: '#3B82F6', fontSize: 13, fontWeight: '600' },
+  chip: { flex: 1, margin: 4, paddingVertical: 14, backgroundColor: '#F3F4F6', borderRadius: 10, alignItems: 'center' },
+  chipText: { fontSize: 14, fontWeight: '500', color: '#111' },
 });

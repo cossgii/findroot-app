@@ -2,7 +2,7 @@ import { useEffect } from 'react';
 import { Stack } from 'expo-router';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Provider as JotaiProvider, useSetAtom } from 'jotai';
-import { getStoredUser } from '../lib/auth';
+import { getStoredUser } from '../services/auth';
 import { userAtom } from '../store/auth';
 
 const queryClient = new QueryClient();

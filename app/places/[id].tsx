@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Alert, Linking, ScrollView, StyleSheet, Text, TouchableOpacity, View, ActivityIndicator } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAtomValue } from 'jotai';
@@ -39,10 +40,16 @@ export default function PlaceDetailScreen() {
 
   const isLiked = liked ?? place.isLiked;
   const count = likeCount ?? place.likesCount;
-  const isOwner = user?.id === place.creatorId;
+  const isOwner = user?.id === place.creator?.id;
 
   async function handleLike() {
-    if (!user) { Alert.alert('로그인이 필요합니다.'); return; }
+    if (!user) {
+      Alert.alert('로그인 필요', '로그인이 필요합니다.', [
+        { text: '취소', style: 'cancel' },
+        { text: '로그인', onPress: () => router.push('/login') },
+      ]);
+      return;
+    }
     try {
       const res = await toggleLike(isLiked, { placeId: id });
       setLiked(res.liked);
@@ -60,6 +67,7 @@ export default function PlaceDetailScreen() {
   }
 
   return (
+    <SafeAreaView style={{ flex: 1 }} edges={['top']}>
     <ScrollView style={styles.container}>
       <TopBar
         right={isOwner ? (
@@ -106,6 +114,7 @@ export default function PlaceDetailScreen() {
         </View>
       )}
     </ScrollView>
+    </SafeAreaView>
   );
 }
 

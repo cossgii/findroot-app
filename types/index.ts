@@ -2,24 +2,27 @@ export type PlaceCategory = 'MEAL' | 'DRINK';
 export type RouteStopLabel = 'MEAL' | 'CAFE' | 'BAR';
 export type RoutePurpose = 'FAMILY' | 'GATHERING' | 'SOLO' | 'COUPLE' | 'ENTIRE';
 
-export type UserSummary = { id: string; name: string; image?: string };
+export type UserSummary = {
+  id: string;
+  name: string | null;
+  image: string | null;
+};
 
 export type Place = {
   id: string;
   name: string;
   latitude: number;
   longitude: number;
-  address?: string;
+  address: string | null;
   description: string;
-  link?: string;
+  link: string | null;
+  district: string | null;
+  category: PlaceCategory;
+  creator: UserSummary;
   createdAt: string;
   updatedAt: string;
-  creatorId: string;
-  district?: string;
-  category: PlaceCategory;
   likesCount: number;
   isLiked: boolean;
-  creator?: UserSummary;
 };
 
 export type Alternative = {
@@ -44,15 +47,14 @@ export type Route = {
   id: string;
   name: string;
   description: string;
-  createdAt: string;
-  updatedAt: string;
-  creatorId: string;
-  districtId?: string;
+  districtId: string | null;
   purpose: RoutePurpose;
   isRepresentative: boolean;
   likesCount: number;
   commentsCount: number;
   isLiked: boolean;
+  createdAt: string;
+  updatedAt: string;
   creator: UserSummary;
   places: RoutePlace[];
 };
@@ -75,6 +77,13 @@ export type CommentsResponse = {
 };
 
 export type LikeResponse = { count: number; liked: boolean };
+
+export type PagedResult<T> = {
+  data: T[];
+  totalCount: number;
+  totalPages: number;
+  currentPage: number;
+};
 
 export const PURPOSE_LABELS: Record<RoutePurpose, string> = {
   FAMILY: '가족',

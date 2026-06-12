@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react';
 import { ActivityIndicator, FlatList, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Screen } from '../../components/ui';
 import { useRouter } from 'expo-router';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAtomValue, useSetAtom } from 'jotai';
 import { userAtom } from '../../store/auth';
-import { logout } from '../../lib/auth';
+import { logout } from '../../services/auth';
 import { fetchMe, fetchUserPlaces, fetchUserRoutes, fetchLikedPlaces, fetchLikedRoutes, fetchFollowers, fetchFollowing } from '../../services/users';
 import { PlaceCard, RouteCard, UserListItem } from '../../components';
 import { Button, Chip, EmptyText, TabBar, UserAvatar } from '../../components/ui';
@@ -86,34 +87,37 @@ export default function MypageScreen() {
 
   function switchContentTab(t: ContentTab) {
     setContentTab(t);
-    if (t === 'routes') { setMyRoutesPage(1); setAllMyRoutes([]); }
-    else { setMyPlacesPage(1); setAllMyPlaces([]); }
+    if (t === 'routes') setMyRoutesPage(1);
+    else setMyPlacesPage(1);
     queryClient.invalidateQueries({ queryKey: t === 'routes' ? ['my-routes', user?.id] : ['my-places', user?.id] });
   }
 
   function switchLikedTab(t: LikedTab) {
     setLikedTab(t);
-    if (t === 'routes') { setLikedRoutesPage(1); setAllLikedRoutes([]); }
-    else { setLikedPlacesPage(1); setAllLikedPlaces([]); }
+    if (t === 'routes') setLikedRoutesPage(1);
+    else setLikedPlacesPage(1);
   }
 
   async function handleLogout() {
     await logout();
     setUser(null);
-    router.replace('/login');
   }
 
-  function LoadMore({ loading, data, page, setPage }: { loading: boolean; data: any; page: number; setPage: (p: number) => void }) {
-    if (!data || data.currentPage >= data.totalPages) return null;
+  if (!user) {
     return (
-      <TouchableOpacity style={styles.loadMoreBtn} onPress={() => setPage(page + 1)}>
-        {loading ? <ActivityIndicator /> : <Text style={styles.loadMoreText}>더보기</Text>}
-      </TouchableOpacity>
+      <Screen style={styles.container}>
+        <View style={styles.guestWrap}>
+          <Text style={styles.guestTitle}>로그인이 필요합니다</Text>
+          <Text style={styles.guestSub}>로그인하면 루트, 장소, 소셜 기능을 이용할 수 있어요.</Text>
+          <Button label="로그인" onPress={() => router.push('/login')} style={styles.guestBtn} />
+          <Button variant="outline" label="회원가입" onPress={() => router.push('/signup')} style={styles.guestBtn} />
+        </View>
+      </Screen>
     );
   }
 
   return (
-    <View style={styles.container}>
+    <Screen style={styles.container}>
       <View style={styles.header}>
         <UserAvatar name={me?.name ?? user?.name ?? '?'} image={me?.image} size={48} colorful />
         <View style={styles.headerInfo}>
@@ -152,7 +156,11 @@ export default function MypageScreen() {
                 contentContainerStyle={styles.list}
                 renderItem={({ item }) => <RouteCard route={item} />}
                 ListEmptyComponent={<EmptyText>루트가 없습니다.</EmptyText>}
-                ListFooterComponent={<LoadMore loading={myRoutesLoading} data={myRoutesData} page={myRoutesPage} setPage={setMyRoutesPage} />}
+                onEndReached={() => {
+                  if (myRoutesData && myRoutesPage < myRoutesData.totalPages && !myRoutesLoading) setMyRoutesPage((p) => p + 1);
+                }}
+                onEndReachedThreshold={0.3}
+                ListFooterComponent={myRoutesLoading && myRoutesPage > 1 ? <ActivityIndicator style={styles.footerLoader} /> : null}
               />
             )
           ) : (
@@ -163,7 +171,11 @@ export default function MypageScreen() {
                 contentContainerStyle={styles.list}
                 renderItem={({ item }) => <PlaceCard place={item} />}
                 ListEmptyComponent={<EmptyText>장소가 없습니다.</EmptyText>}
-                ListFooterComponent={<LoadMore loading={myPlacesLoading} data={myPlacesData} page={myPlacesPage} setPage={setMyPlacesPage} />}
+                onEndReached={() => {
+                  if (myPlacesData && myPlacesPage < myPlacesData.totalPages && !myPlacesLoading) setMyPlacesPage((p) => p + 1);
+                }}
+                onEndReachedThreshold={0.3}
+                ListFooterComponent={myPlacesLoading && myPlacesPage > 1 ? <ActivityIndicator style={styles.footerLoader} /> : null}
               />
             )
           )}
@@ -184,7 +196,11 @@ export default function MypageScreen() {
                 contentContainerStyle={styles.list}
                 renderItem={({ item }) => <RouteCard route={item} showCreator />}
                 ListEmptyComponent={<EmptyText>좋아요한 루트가 없습니다.</EmptyText>}
-                ListFooterComponent={<LoadMore loading={likedRoutesLoading} data={likedRoutesData} page={likedRoutesPage} setPage={setLikedRoutesPage} />}
+                onEndReached={() => {
+                  if (likedRoutesData && likedRoutesPage < likedRoutesData.totalPages && !likedRoutesLoading) setLikedRoutesPage((p) => p + 1);
+                }}
+                onEndReachedThreshold={0.3}
+                ListFooterComponent={likedRoutesLoading && likedRoutesPage > 1 ? <ActivityIndicator style={styles.footerLoader} /> : null}
               />
             )
           ) : (
@@ -195,7 +211,11 @@ export default function MypageScreen() {
                 contentContainerStyle={styles.list}
                 renderItem={({ item }) => <PlaceCard place={item} />}
                 ListEmptyComponent={<EmptyText>좋아요한 장소가 없습니다.</EmptyText>}
-                ListFooterComponent={<LoadMore loading={likedPlacesLoading} data={likedPlacesData} page={likedPlacesPage} setPage={setLikedPlacesPage} />}
+                onEndReached={() => {
+                  if (likedPlacesData && likedPlacesPage < likedPlacesData.totalPages && !likedPlacesLoading) setLikedPlacesPage((p) => p + 1);
+                }}
+                onEndReachedThreshold={0.3}
+                ListFooterComponent={likedPlacesLoading && likedPlacesPage > 1 ? <ActivityIndicator style={styles.footerLoader} /> : null}
               />
             )
           )}
@@ -211,19 +231,19 @@ export default function MypageScreen() {
               <Text style={styles.socialSection}>팔로워 ({followers?.totalCount ?? 0})</Text>
               {followersLoading ? <ActivityIndicator /> : followers?.data.map((u) => <UserListItem key={u.id} user={u} />)}
               <Text style={[styles.socialSection, styles.socialSectionGap]}>팔로잉</Text>
-              {followingLoading ? <ActivityIndicator /> : following?.map((u) => <UserListItem key={u.id} user={u} />)}
-              {following?.length === 0 && <EmptyText>팔로잉 중인 사용자가 없습니다.</EmptyText>}
+              {followingLoading ? <ActivityIndicator /> : following?.data?.map((u) => <UserListItem key={u.id} user={u} />)}
+              {!following?.data?.length && !followingLoading && <EmptyText>팔로잉 중인 사용자가 없습니다.</EmptyText>}
             </View>
           }
           renderItem={() => null}
         />
       )}
-    </View>
+    </Screen>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.bg.white },
+  container: { backgroundColor: colors.bg.white },
   header: { flexDirection: 'row', alignItems: 'center', padding: 16, gap: 12, borderBottomWidth: 1, borderBottomColor: colors.divider },
   headerInfo: { flex: 1 },
   name: { fontSize: 17, fontWeight: 'bold', color: colors.text.primary },
@@ -232,8 +252,11 @@ const styles = StyleSheet.create({
   subTabRow: { flexDirection: 'row', paddingHorizontal: 16, paddingTop: 10, gap: 8 },
   createBtn: { marginLeft: 'auto' as any },
   list: { padding: 16, gap: 10 },
-  loadMoreBtn: { borderWidth: 1, borderColor: colors.border, borderRadius: 8, paddingVertical: 10, alignItems: 'center', marginTop: 8 },
-  loadMoreText: { color: colors.text.secondary, fontSize: font.base },
+  footerLoader: { marginVertical: 16 },
+  guestWrap: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 32, gap: 12 },
+  guestTitle: { fontSize: font['2xl'], fontWeight: 'bold', color: colors.text.primary, textAlign: 'center' },
+  guestSub: { fontSize: font.base, color: colors.text.secondary, textAlign: 'center', lineHeight: 22, marginBottom: 8 },
+  guestBtn: { width: '100%' },
   socialSection: { fontSize: font.xl, fontWeight: '700', color: colors.text.primary, marginBottom: 10 },
   socialSectionGap: { marginTop: 16 },
 });

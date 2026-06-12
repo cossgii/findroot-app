@@ -1,5 +1,6 @@
 import { StyleSheet, Text, TouchableOpacity } from 'react-native';
 import { useRouter } from 'expo-router';
+import { useQueryClient } from '@tanstack/react-query';
 import { UserAvatar } from './ui';
 import { colors, font } from '../constants/theme';
 import type { UserSummary } from '../types';
@@ -8,8 +9,15 @@ type Props = { user: UserSummary; showChevron?: boolean };
 
 export function UserListItem({ user, showChevron = false }: Props) {
   const router = useRouter();
+  const queryClient = useQueryClient();
+
+  function handlePress() {
+    queryClient.setQueryData(['user', user.id], user);
+    router.push(`/users/${user.id}`);
+  }
+
   return (
-    <TouchableOpacity style={styles.item} onPress={() => router.push(`/users/${user.id}`)}>
+    <TouchableOpacity style={styles.item} onPress={handlePress}>
       <UserAvatar name={user.name} image={user.image} size={38} />
       <Text style={styles.name}>{user.name}</Text>
       {showChevron && <Text style={styles.chevron}>›</Text>}

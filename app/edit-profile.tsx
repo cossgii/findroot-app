@@ -1,11 +1,12 @@
 import { useState } from 'react';
 import { Alert, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useSetAtom } from 'jotai';
 import * as ImagePicker from 'expo-image-picker';
-import * as SecureStore from 'expo-secure-store';
 import { fetchMe, updateMe, updatePassword } from '../services/users';
+import { getStoredUser, setStoredUser } from '../lib/storage';
 import { uploadImage } from '../services/images';
 import { userAtom } from '../store/auth';
 import { BackButton, Button, Card, Input, UserAvatar } from '../components/ui';
@@ -54,8 +55,8 @@ export default function EditProfileScreen() {
     },
     onSuccess: async (updated) => {
       queryClient.invalidateQueries({ queryKey: ['me'] });
-      const stored = await SecureStore.getItemAsync('app_user');
-      if (stored) await SecureStore.setItemAsync('app_user', JSON.stringify({ ...JSON.parse(stored), name: updated.name }));
+      const stored = await getStoredUser();
+      if (stored) await setStoredUser({ ...stored, name: updated.name });
       setUser((prev) => prev ? { ...prev, name: updated.name } : prev);
       setImageUri(null);
       Alert.alert('완료', '프로필이 변경됐습니다.');
@@ -92,6 +93,7 @@ export default function EditProfileScreen() {
   const isPending = nameMutation.isPending || uploadingImage;
 
   return (
+    <SafeAreaView style={{ flex: 1 }} edges={['top']}>
     <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
         <BackButton style={styles.back} />
@@ -123,6 +125,7 @@ export default function EditProfileScreen() {
         </Card>
       </ScrollView>
     </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 }
 

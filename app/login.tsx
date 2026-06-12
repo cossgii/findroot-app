@@ -1,10 +1,10 @@
 import { useState } from 'react';
-import { Alert, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Alert, StyleSheet, Text, TouchableOpacity } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSetAtom } from 'jotai';
 import { userAtom } from '../store/auth';
-import { login } from '../lib/auth';
-import { Button, Input } from '../components/ui';
+import { login } from '../services/auth';
+import { Button, Input, Screen } from '../components/ui';
 import { colors, font } from '../constants/theme';
 
 export default function LoginScreen() {
@@ -30,7 +30,7 @@ export default function LoginScreen() {
   }
 
   return (
-    <View style={styles.container}>
+    <Screen style={styles.container}>
       <Text style={styles.title}>Findroot</Text>
       <Input placeholder="아이디" value={loginId} onChangeText={setLoginId} autoCapitalize="none" style={styles.mb} />
       <Input placeholder="비밀번호" value={password} onChangeText={setPassword} secureTextEntry style={styles.mb} />
@@ -41,12 +41,17 @@ export default function LoginScreen() {
       <TouchableOpacity onPress={() => router.push('/signup')} style={styles.link}>
         <Text style={styles.linkText}>계정이 없으신가요? 회원가입</Text>
       </TouchableOpacity>
-    </View>
+      {router.canGoBack() && (
+        <TouchableOpacity onPress={() => router.back()} style={styles.link}>
+          <Text style={styles.hint}>나중에 할게요</Text>
+        </TouchableOpacity>
+      )}
+    </Screen>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, justifyContent: 'center', padding: 24, backgroundColor: colors.bg.white },
+  container: { justifyContent: 'center', padding: 24, backgroundColor: colors.bg.white },
   title: { fontSize: 32, fontWeight: 'bold', marginBottom: 32, textAlign: 'center' },
   mb: { marginBottom: 12 },
   link: { marginTop: 12, alignItems: 'center' },

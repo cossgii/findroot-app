@@ -1,13 +1,25 @@
 import { api } from '../lib/api';
 import type { Place, Route, UserSummary } from '../types';
 
+export type MeUser = {
+  id: string;
+  name: string | null;
+  email: string | null;
+  image: string | null;
+};
+
 type PagedPlaces = { places: Place[]; totalCount: number; totalPages: number; currentPage: number };
 type PagedRoutes = { routes: Route[]; totalCount: number; totalPages: number; currentPage: number };
-type UserList = { data: UserSummary[]; totalCount: number; totalPages: number; currentPage: number };
+type PagedUsers = { data: UserSummary[]; totalCount: number; totalPages: number; currentPage: number };
 
-export async function fetchMe() {
+export async function fetchMe(): Promise<MeUser> {
   const { data } = await api.get('/api/users/me');
-  return data as { id: string; name: string; loginId: string; email: string; image?: string };
+  return data;
+}
+
+export async function fetchUser(userId: string): Promise<MeUser> {
+  const { data } = await api.get(`/api/users/${userId}`);
+  return data;
 }
 
 export async function fetchUserPlaces(userId: string, page = 1): Promise<PagedPlaces> {
@@ -25,22 +37,26 @@ export async function fetchFollowStatus(userId: string): Promise<boolean> {
   return data.isFollowing;
 }
 
-export async function follow(userId: string) {
+export async function follow(userId: string): Promise<void> {
   await api.post(`/api/users/${userId}/follow`);
 }
 
-export async function unfollow(userId: string) {
+export async function unfollow(userId: string): Promise<void> {
   await api.delete(`/api/users/${userId}/follow`);
 }
 
-export async function fetchFollowers(page = 1): Promise<UserList> {
+export async function fetchFollowers(page = 1): Promise<PagedUsers> {
   const { data } = await api.get('/api/users/me/followers', { params: { page, limit: 20 } });
   return data;
 }
 
-export async function fetchFollowing(): Promise<UserSummary[]> {
-  const { data } = await api.get('/api/users/me/following', { params: { limit: 100 } });
-  return data.data;
+export type FollowingResponse = { data: UserSummary[]; nextCursor?: string };
+
+export async function fetchFollowing(cursor?: string): Promise<FollowingResponse> {
+  const { data } = await api.get('/api/users/me/following', {
+    params: { limit: 20, ...(cursor ? { cursor } : {}) },
+  });
+  return data;
 }
 
 export async function fetchLikedPlaces(page = 1): Promise<PagedPlaces> {
@@ -53,12 +69,15 @@ export async function fetchLikedRoutes(page = 1): Promise<PagedRoutes> {
   return data;
 }
 
-export async function updateMe(payload: { name?: string; image?: string | null }) {
+export async function updateMe(payload: { name?: string; image?: string | null }): Promise<MeUser> {
   const { data } = await api.put('/api/users/me', payload);
-  return data as { id: string; name: string; loginId: string; email: string };
+  return data;
 }
 
-export async function updatePassword(payload: { currentPassword: string; newPassword: string }) {
+export async function updatePassword(payload: {
+  currentPassword: string;
+  newPassword: string;
+}): Promise<void> {
   await api.put('/api/users/me/password', payload);
 }
 

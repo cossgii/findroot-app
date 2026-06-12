@@ -3,12 +3,16 @@ import {
   View, Text, TextInput, TouchableOpacity, StyleSheet, Alert,
   ScrollView, FlatList, KeyboardAvoidingView, Platform, ActivityIndicator, Modal,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { createRoute } from '../services/routes';
 import { searchPlaces } from '../services/places';
 import { PURPOSE_LABELS, STOP_LABELS, CATEGORY_LABELS } from '../types';
+import { SEOUL_DISTRICTS } from '../constants/districts';
 import type { RoutePurpose, RouteStopLabel, Place } from '../types';
+
+const DISTRICT_OPTIONS = SEOUL_DISTRICTS.filter((d) => d.id !== 'all');
 
 type Stop = { place: Place; label: RouteStopLabel };
 
@@ -44,15 +48,18 @@ export default function CreateRouteScreen() {
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [purpose, setPurpose] = useState<RoutePurpose>('ENTIRE');
+  const [districtId, setDistrictId] = useState('');
   const [stops, setStops] = useState<Stop[]>([]);
   const [showPicker, setShowPicker] = useState(false);
   const [pendingPlace, setPendingPlace] = useState<Place | null>(null);
   const [pendingLabel, setPendingLabel] = useState<RouteStopLabel>('MEAL');
 
+  const selectedDistrictName = DISTRICT_OPTIONS.find((d) => d.id === districtId)?.name;
+
   const { data: placesData, isLoading: placesLoading } = useQuery({
-    queryKey: ['searchPlaces'],
-    queryFn: () => searchPlaces({ sort: 'recent' }),
-    enabled: showPicker && !pendingPlace,
+    queryKey: ['searchPlaces', districtId],
+    queryFn: () => searchPlaces({ district: selectedDistrictName, sort: 'recent' }),
+    enabled: showPicker && !pendingPlace && !!districtId,
   });
 
   const mutation = useMutation({
@@ -68,6 +75,10 @@ export default function CreateRouteScreen() {
 
   function addStop() {
     if (!pendingPlace) return;
+    if (stops.length >= 5) {
+      Alert.alert('경유지는 최대 5개까지 추가할 수 있습니다.');
+      return;
+    }
     if (stops.some((s) => s.place.id === pendingPlace.id)) {
       Alert.alert('이미 추가된 장소입니다.');
       return;
@@ -89,16 +100,19 @@ export default function CreateRouteScreen() {
 
   function handleSubmit() {
     if (!name.trim()) { Alert.alert('오류', '루트 이름을 입력해주세요.'); return; }
+    if (!districtId) { Alert.alert('오류', '자치구를 선택해주세요.'); return; }
     if (stops.length < 2) { Alert.alert('오류', '경유지를 최소 2개 추가해주세요.'); return; }
     mutation.mutate({
       name: name.trim(),
       description: description.trim() || undefined,
       purpose,
+      districtId,
       places: stops.map((s, i) => ({ placeId: s.place.id, order: i + 1, label: s.label })),
     });
   }
 
   return (
+    <SafeAreaView style={{ flex: 1 }} edges={['top']}>
     <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
         <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
@@ -111,6 +125,21 @@ export default function CreateRouteScreen() {
 
         <Text style={styles.label}>설명 (선택)</Text>
         <TextInput style={[styles.input, styles.multiline]} value={description} onChangeText={setDescription} placeholder="루트 설명" multiline numberOfLines={3} />
+
+        <Text style={styles.label}>자치구 *</Text>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.purposeRow}>
+          {DISTRICT_OPTIONS.map((d) => (
+            <TouchableOpacity
+              key={d.id}
+              style={[styles.purposeChip, districtId === d.id && styles.purposeChipActive]}
+              onPress={() => setDistrictId(d.id)}
+            >
+              <Text style={[styles.purposeChipText, districtId === d.id && styles.purposeChipTextActive]}>
+                {d.name}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
 
         <Text style={styles.label}>목적 *</Text>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.purposeRow}>
@@ -128,9 +157,15 @@ export default function CreateRouteScreen() {
         </ScrollView>
 
         <View style={styles.stopsHeader}>
-          <Text style={styles.label}>경유지 ({stops.length}) *</Text>
-          <TouchableOpacity style={styles.addStopBtn} onPress={() => setShowPicker(true)}>
-            <Text style={styles.addStopBtnText}>+ 추가</Text>
+          <Text style={styles.label}>경유지 ({stops.length}/5) *</Text>
+          <TouchableOpacity
+            style={[styles.addStopBtn, (stops.length >= 5 || !districtId) && styles.addStopBtnDisabled]}
+            onPress={() => {
+              if (!districtId) { Alert.alert('자치구를 먼저 선택해주세요.'); return; }
+              if (stops.length < 5) setShowPicker(true);
+            }}
+          >
+            <Text style={[styles.addStopBtnText, (stops.length >= 5 || !districtId) && styles.addStopBtnTextDisabled]}>+ 추가</Text>
           </TouchableOpacity>
         </View>
         {stops.length === 0 && <Text style={styles.emptyStops}>경유지를 최소 2개 추가해주세요.</Text>}
@@ -197,6 +232,7 @@ export default function CreateRouteScreen() {
         </View>
       </Modal>
     </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 }
 
@@ -217,7 +253,9 @@ const styles = StyleSheet.create({
 
   stopsHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 14 },
   addStopBtn: { borderWidth: 1, borderColor: '#3B82F6', borderRadius: 8, paddingHorizontal: 12, paddingVertical: 6 },
+  addStopBtnDisabled: { borderColor: '#ccc' },
   addStopBtnText: { color: '#3B82F6', fontWeight: '600', fontSize: 13 },
+  addStopBtnTextDisabled: { color: '#ccc' },
   emptyStops: { color: '#bbb', textAlign: 'center', paddingVertical: 16, fontSize: 13 },
 
   stopRow: { flexDirection: 'row', alignItems: 'center', borderWidth: 1, borderColor: '#eee', borderRadius: 10, padding: 12, marginTop: 8, gap: 10 },

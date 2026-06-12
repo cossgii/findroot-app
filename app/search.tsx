@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { ActivityIndicator, FlatList, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { Screen } from '../components/ui';
 import { useRouter } from 'expo-router';
 import { searchUsers } from '../services/users';
 import { UserListItem } from '../components';
@@ -33,7 +34,7 @@ export default function SearchScreen() {
   }, [query]);
 
   return (
-    <View style={styles.container}>
+    <Screen style={styles.container}>
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()}>
           <Text style={styles.back}>← 뒤로</Text>
@@ -67,12 +68,12 @@ export default function SearchScreen() {
           query.trim() && !loading ? <EmptyText>검색 결과가 없습니다.</EmptyText> : null
         }
       />
-    </View>
+    </Screen>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.bg.white },
+  container: { backgroundColor: colors.bg.white },
   header: { flexDirection: 'row', alignItems: 'center', padding: 16, gap: 12, borderBottomWidth: 1, borderBottomColor: colors.divider },
   back: { color: colors.primary, fontSize: 16 },
   title: { fontSize: 20, fontWeight: 'bold' },

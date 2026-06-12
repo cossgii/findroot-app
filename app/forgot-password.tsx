@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { Alert, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
-import { api } from '../lib/api';
+import { forgotPassword } from '../services/auth';
 import { Button, Input, BackButton } from '../components/ui';
 import { colors, font } from '../constants/theme';
 
@@ -19,7 +20,7 @@ export default function ForgotPasswordScreen() {
     }
     setLoading(true);
     try {
-      await api.post('/api/auth/password-reset/request', { loginId: loginId.trim(), email: email.trim() });
+      await forgotPassword(loginId.trim(), email.trim());
       setSent(true);
     } catch {
       Alert.alert('오류', '요청에 실패했습니다. 아이디와 이메일을 확인해주세요.');
@@ -29,6 +30,7 @@ export default function ForgotPasswordScreen() {
   }
 
   return (
+    <SafeAreaView style={{ flex: 1 }} edges={['top']}>
     <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
         <BackButton style={styles.back} />
@@ -50,7 +52,14 @@ export default function ForgotPasswordScreen() {
             <Text style={styles.desc}>
               가입 시 사용한 아이디와 이메일을 입력하면{'\n'}비밀번호 재설정 링크를 보내드립니다.
             </Text>
-            <Input placeholder="아이디 입력" value={loginId} onChangeText={setLoginId} autoCapitalize="none" autoFocus style={styles.mb} />
+            <Input
+              placeholder="아이디 입력"
+              value={loginId}
+              onChangeText={setLoginId}
+              autoCapitalize="none"
+              autoFocus
+              style={styles.mb}
+            />
             <Input
               placeholder="이메일 입력"
               value={email}
@@ -66,6 +75,7 @@ export default function ForgotPasswordScreen() {
         )}
       </ScrollView>
     </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 }
 

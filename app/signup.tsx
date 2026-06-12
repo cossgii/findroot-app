@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Alert, ScrollView, StyleSheet, Text, TouchableOpacity } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { signup } from '../services/auth';
 import { Button, Input } from '../components/ui';
@@ -35,6 +36,7 @@ export default function SignupScreen() {
   }
 
   return (
+    <SafeAreaView style={{ flex: 1 }} edges={['top']}>
     <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
       <Text style={styles.title}>회원가입</Text>
       <Input placeholder="이름" value={form.name} onChangeText={set('name')} style={styles.mb} />
@@ -46,7 +48,13 @@ export default function SignupScreen() {
       <TouchableOpacity onPress={() => router.back()} style={styles.link}>
         <Text style={styles.linkText}>이미 계정이 있으신가요? 로그인</Text>
       </TouchableOpacity>
+      {router.canGoBack() && (
+        <TouchableOpacity onPress={() => router.back()} style={styles.link}>
+          <Text style={styles.hint}>나중에 할게요</Text>
+        </TouchableOpacity>
+      )}
     </ScrollView>
+    </SafeAreaView>
   );
 }
 
@@ -56,4 +64,5 @@ const styles = StyleSheet.create({
   mb: { marginBottom: 12 },
   link: { marginTop: 20, alignItems: 'center' },
   linkText: { color: colors.primary, fontSize: font.base },
+  hint: { color: colors.text.hint, fontSize: font.md },
 });

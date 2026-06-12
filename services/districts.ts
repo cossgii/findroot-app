@@ -9,7 +9,7 @@ type DistrictPlacesParams = {
   page?: number;
 };
 
-type DistrictPlacesResponse = {
+export type DistrictPlacesResponse = {
   places: Place[];
   totalCount: number;
   totalPages: number;
@@ -21,9 +21,21 @@ export async function fetchDistrictPlaces(params: DistrictPlacesParams): Promise
   return data;
 }
 
-export async function fetchDistrictRoutes(districtId: string, purpose?: RoutePurpose): Promise<Route[]> {
-  const params: Record<string, string> = { districtId };
-  if (purpose) params.purpose = purpose;
-  const { data } = await api.get('/api/routes/featured', { params });
-  return data.routes ?? data;
+type DistrictRoutesParams = {
+  districtId?: string;
+  sort?: 'recent' | 'likes';
+  purpose?: RoutePurpose;
+  page?: number;
+};
+
+export type DistrictRoutesResponse = {
+  routes: Route[];
+  totalCount: number;
+  totalPages: number;
+  currentPage: number;
+};
+
+export async function fetchDistrictRoutes(params: DistrictRoutesParams): Promise<DistrictRoutesResponse> {
+  const { data } = await api.get('/api/routes/locations', { params: { ...params, limit: 10 } });
+  return data;
 }

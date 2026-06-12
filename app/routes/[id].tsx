@@ -1,8 +1,9 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   View, Text, ScrollView, StyleSheet, ActivityIndicator,
   TouchableOpacity, TextInput, Alert, KeyboardAvoidingView, Platform,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAtomValue } from 'jotai';
@@ -88,13 +89,26 @@ export default function RouteDetailScreen() {
   const [liked, setLiked] = useState<boolean | null>(null);
   const [likeCount, setLikeCount] = useState<number | null>(null);
   const [editingComment, setEditingComment] = useState<{ id: string; content: string } | null>(null);
+  const [commentPage, setCommentPage] = useState(1);
+  const [allComments, setAllComments] = useState<Comment[]>([]);
 
   const { data: route, isLoading, isError } = useQuery({ queryKey: ['route', id], queryFn: () => fetchRoute(id), enabled: !!id });
-  const { data: comments } = useQuery({ queryKey: ['comments', id], queryFn: () => fetchComments(id), enabled: !!id });
+  const { data: comments, isLoading: commentsLoading } = useQuery({ queryKey: ['comments', id, commentPage], queryFn: () => fetchComments(id, commentPage), enabled: !!id });
+
+  useEffect(() => {
+    if (comments?.data) {
+      setAllComments((prev) => commentPage === 1 ? comments.data : [...prev, ...comments.data]);
+    }
+  }, [comments]);
 
   const commentMutation = useMutation({
     mutationFn: (content: string) => postComment(id, content),
-    onSuccess: () => { setCommentText(''); queryClient.invalidateQueries({ queryKey: ['comments', id] }); },
+    onSuccess: () => {
+      setCommentText('');
+      setCommentPage(1);
+      setAllComments([]);
+      queryClient.invalidateQueries({ queryKey: ['comments', id] });
+    },
     onError: () => Alert.alert('오류', '댓글을 등록하지 못했습니다.'),
   });
 
@@ -127,10 +141,16 @@ export default function RouteDetailScreen() {
 
   const isLiked = liked ?? route.isLiked;
   const count = likeCount ?? route.likesCount;
-  const isOwner = user?.id === route.creatorId;
+  const isOwner = user?.id === route.creator?.id;
 
   async function handleLike() {
-    if (!user) { Alert.alert('로그인이 필요합니다.'); return; }
+    if (!user) {
+      Alert.alert('로그인 필요', '로그인이 필요합니다.', [
+        { text: '취소', style: 'cancel' },
+        { text: '로그인', onPress: () => router.push('/login') },
+      ]);
+      return;
+    }
     try {
       const res = await toggleLike(isLiked, { routeId: id });
       setLiked(res.liked);
@@ -165,6 +185,7 @@ export default function RouteDetailScreen() {
   const sortedPlaces = [...route.places].sort((a, b) => a.order - b.order);
 
   return (
+    <SafeAreaView style={{ flex: 1 }} edges={['top']}>
     <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <ScrollView style={styles.container}>
         <TopBar
@@ -196,7 +217,7 @@ export default function RouteDetailScreen() {
 
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>댓글 ({comments?.totalCount ?? 0})</Text>
-          {comments?.data.map((c) => (
+          {allComments.map((c) => (
             <CommentItem
               key={c.id} comment={c}
               isOwner={user?.id === c.authorId}
@@ -204,7 +225,12 @@ export default function RouteDetailScreen() {
               onEdit={() => setEditingComment({ id: c.id, content: c.content })}
             />
           ))}
-          {comments?.data.length === 0 && <EmptyText>첫 댓글을 남겨보세요.</EmptyText>}
+          {allComments.length === 0 && !commentsLoading && <EmptyText>첫 댓글을 남겨보세요.</EmptyText>}
+          {comments && comments.currentPage < comments.totalPages && (
+            <TouchableOpacity style={styles.loadMoreBtn} onPress={() => setCommentPage((p) => p + 1)}>
+              {commentsLoading ? <ActivityIndicator size="small" /> : <Text style={styles.loadMoreText}>댓글 더보기</Text>}
+            </TouchableOpacity>
+          )}
         </View>
 
         <View style={{ height: 80 }} />
@@ -242,6 +268,7 @@ export default function RouteDetailScreen() {
         </View>
       )}
     </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 }
 
@@ -277,6 +304,8 @@ const styles = StyleSheet.create({
   commentDelete: { fontSize: font.sm, color: colors.danger },
   commentContent: { fontSize: font.base, color: colors.text.body, lineHeight: 20 },
   commentDate: { fontSize: font.xs, color: colors.text.disabled, marginTop: 4 },
+  loadMoreBtn: { borderWidth: 1, borderColor: colors.border, borderRadius: 8, paddingVertical: 10, alignItems: 'center', marginTop: 8 },
+  loadMoreText: { color: colors.text.secondary, fontSize: font.base },
   inputRow: { flexDirection: 'row', padding: 12, borderTopWidth: 1, borderTopColor: colors.borderLight, backgroundColor: colors.bg.white, gap: 8, alignItems: 'center' },
   input: { flex: 1, borderWidth: 1, borderColor: colors.border, borderRadius: radius.md, padding: 10, fontSize: font.base, maxHeight: 80 },
 });
