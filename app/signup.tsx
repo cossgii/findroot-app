@@ -1,10 +1,10 @@
-import { useState } from 'react';
+﻿import { useState } from 'react';
 import { Alert, ScrollView, StyleSheet, Text, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
-import { signup } from '../services/auth';
-import { Button, Input } from '../components/ui';
-import { colors, font } from '../constants/theme';
+import { signup } from '@/services/auth';
+import { Button, Input } from '@/components/ui';
+import { colors, font } from '@/constants/theme';
 
 export default function SignupScreen() {
   const router = useRouter();

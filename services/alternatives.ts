@@ -1,5 +1,5 @@
-import { api } from '../lib/api';
-import type { Alternative } from '../types';
+﻿import { api } from '@/lib/api';
+import type { Alternative } from '@/types';
 
 export async function fetchAlternatives(routeId: string, routePlaceId: string): Promise<Alternative[]> {
   const { data } = await api.get(`/api/routes/${routeId}/places/${routePlaceId}/alternatives`);

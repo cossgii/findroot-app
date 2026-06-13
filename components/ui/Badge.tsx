@@ -1,5 +1,5 @@
-import { StyleSheet, Text } from 'react-native';
-import { colors, font, radius } from '../../constants/theme';
+﻿import { StyleSheet, Text } from 'react-native';
+import { colors, font, radius } from '@/constants/theme';
 
 type Variant = 'primary' | 'success';
 

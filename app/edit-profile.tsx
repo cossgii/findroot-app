@@ -1,16 +1,16 @@
-import { useState } from 'react';
+﻿import { useState } from 'react';
 import { Alert, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useSetAtom } from 'jotai';
 import * as ImagePicker from 'expo-image-picker';
-import { fetchMe, updateMe, updatePassword } from '../services/users';
-import { getStoredUser, setStoredUser } from '../lib/storage';
-import { uploadImage } from '../services/images';
-import { userAtom } from '../store/auth';
-import { BackButton, Button, Card, Input, UserAvatar } from '../components/ui';
-import { colors, font } from '../constants/theme';
+import { fetchMe, updateMe, updatePassword } from '@/services/users';
+import { getStoredUser, setStoredUser } from '@/lib/storage';
+import { uploadImage } from '@/services/images';
+import { userAtom } from '@/store/auth';
+import { BackButton, Button, Card, Input, UserAvatar } from '@/components/ui';
+import { colors, font } from '@/constants/theme';
 
 export default function EditProfileScreen() {
   const router = useRouter();

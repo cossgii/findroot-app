@@ -1,4 +1,4 @@
-import { useState } from 'react';
+﻿import { useState } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity, StyleSheet, Alert,
   ScrollView, FlatList, KeyboardAvoidingView, Platform, ActivityIndicator, Modal,
@@ -6,11 +6,11 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { createRoute } from '../services/routes';
-import { searchPlaces } from '../services/places';
-import { PURPOSE_LABELS, STOP_LABELS, CATEGORY_LABELS } from '../types';
-import { SEOUL_DISTRICTS } from '../constants/districts';
-import type { RoutePurpose, RouteStopLabel, Place } from '../types';
+import { createRoute } from '@/services/routes';
+import { searchPlaces } from '@/services/places';
+import { PURPOSE_LABELS, STOP_LABELS, CATEGORY_LABELS } from '@/types';
+import { SEOUL_DISTRICTS } from '@/constants/districts';
+import type { RoutePurpose, RouteStopLabel, Place } from '@/types';
 
 const DISTRICT_OPTIONS = SEOUL_DISTRICTS.filter((d) => d.id !== 'all');
 

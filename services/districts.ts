@@ -1,6 +1,6 @@
-import { api } from '../lib/api';
-import type { Place, Route } from '../types';
-import type { RoutePurpose, PlaceCategory } from '../types';
+﻿import { api } from '@/lib/api';
+import type { Place, Route } from '@/types';
+import type { RoutePurpose, PlaceCategory } from '@/types';
 
 type DistrictPlacesParams = {
   districtName: string;

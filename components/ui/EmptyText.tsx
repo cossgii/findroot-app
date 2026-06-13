@@ -1,5 +1,5 @@
-import { StyleSheet, Text } from 'react-native';
-import { colors, font } from '../../constants/theme';
+﻿import { StyleSheet, Text } from 'react-native';
+import { colors, font } from '@/constants/theme';
 
 export function EmptyText({ children }: { children: string }) {
   return <Text style={styles.text}>{children}</Text>;

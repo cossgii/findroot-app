@@ -1,15 +1,15 @@
-import { useState, useEffect } from 'react';
+﻿import { useState, useEffect } from 'react';
 import { ActivityIndicator, Alert, FlatList, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { Screen } from '../../components/ui';
+import { Screen } from '@/components/ui';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAtomValue } from 'jotai';
-import { fetchUser, fetchUserPlaces, fetchUserRoutes, fetchFollowing, follow, unfollow } from '../../services/users';
-import { userAtom } from '../../store/auth';
-import { PlaceCard, RouteCard } from '../../components';
-import { BackButton, Button, TabBar, UserAvatar, EmptyText } from '../../components/ui';
-import { colors, font } from '../../constants/theme';
-import type { Place, Route } from '../../types';
+import { fetchUser, fetchUserPlaces, fetchUserRoutes, fetchFollowing, follow, unfollow } from '@/services/users';
+import { userAtom } from '@/store/auth';
+import { PlaceCard, RouteCard } from '@/components';
+import { BackButton, Button, TabBar, UserAvatar, EmptyText } from '@/components/ui';
+import { colors, font } from '@/constants/theme';
+import type { Place, Route } from '@/types';
 
 type Tab = 'routes' | 'places';
 
@@ -20,6 +20,14 @@ export default function UserProfileScreen() {
   const currentUser = useAtomValue(userAtom);
   const [tab, setTab] = useState<Tab>('routes');
   const isMe = currentUser?.id === id;
+
+  useEffect(() => {
+    if (!currentUser) {
+      Alert.alert('로그인 필요', '사용자 프로필은 로그인 후 이용할 수 있습니다.', [
+        { text: '확인', onPress: () => router.back() },
+      ]);
+    }
+  }, [currentUser]);
 
   const [routePage, setRoutePage] = useState(1);
   const [placePage, setPlacePage] = useState(1);

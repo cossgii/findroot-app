@@ -1,7 +1,7 @@
-import { StyleSheet, Text, TouchableOpacity, useWindowDimensions } from 'react-native';
+﻿import { StyleSheet, Text, TouchableOpacity, useWindowDimensions } from 'react-native';
 import { useRouter } from 'expo-router';
-import { radius, font } from '../constants/theme';
-import type { DistrictInfo } from '../constants/districts';
+import { radius, font } from '@/constants/theme';
+import type { DistrictInfo } from '@/constants/districts';
 
 const CARD_COLORS = [
   '#3B82F6', '#10B981', '#F59E0B', '#EF4444',

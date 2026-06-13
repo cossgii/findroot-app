@@ -1,4 +1,4 @@
-import { useState } from 'react';
+﻿import { useState } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity, StyleSheet,
   Alert, ScrollView, KeyboardAvoidingView, Platform, ActivityIndicator,
@@ -6,9 +6,9 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import * as Location from 'expo-location';
-import { createPlace } from '../services/places';
-import { CATEGORY_LABELS } from '../types';
-import type { PlaceCategory } from '../types';
+import { createPlace } from '@/services/places';
+import { CATEGORY_LABELS } from '@/types';
+import type { PlaceCategory } from '@/types';
 
 export default function CreatePlaceScreen() {
   const router = useRouter();

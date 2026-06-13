@@ -1,5 +1,5 @@
-import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { colors, font } from '../../constants/theme';
+﻿import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { colors, font } from '@/constants/theme';
 
 type Tab<T extends string> = { key: T; label: string };
 

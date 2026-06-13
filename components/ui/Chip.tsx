@@ -1,5 +1,5 @@
-import { StyleSheet, Text, TouchableOpacity, ViewStyle } from 'react-native';
-import { colors, font, radius } from '../../constants/theme';
+﻿import { StyleSheet, Text, TouchableOpacity, ViewStyle } from 'react-native';
+import { colors, font, radius } from '@/constants/theme';
 
 type Props = { label: string; active?: boolean; onPress: () => void; style?: ViewStyle };
 

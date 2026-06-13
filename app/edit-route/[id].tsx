@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+﻿import { useState, useEffect } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity, StyleSheet, Alert,
   ScrollView, FlatList, KeyboardAvoidingView, Platform, ActivityIndicator, Modal,
@@ -6,11 +6,12 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { fetchRoute, updateRoute, addAlternative, deleteAlternative } from '../../services/routes';
-import { searchPlaces } from '../../services/places';
-import { SEOUL_DISTRICTS } from '../../constants/districts';
-import { PURPOSE_LABELS, STOP_LABELS, CATEGORY_LABELS } from '../../types';
-import type { RoutePurpose, RouteStopLabel, Place, Alternative } from '../../types';
+import { fetchRoute, updateRoute } from '@/services/routes';
+import { createAlternative, deleteAlternative } from '@/services/alternatives';
+import { searchPlaces } from '@/services/places';
+import { SEOUL_DISTRICTS } from '@/constants/districts';
+import { PURPOSE_LABELS, STOP_LABELS, CATEGORY_LABELS } from '@/types';
+import type { RoutePurpose, RouteStopLabel, Place, Alternative } from '@/types';
 
 type Stop = { place: Place; label: RouteStopLabel; routePlaceId?: string };
 
@@ -140,7 +141,7 @@ export default function EditRouteScreen() {
 
   const addAltMutation = useMutation({
     mutationFn: ({ routePlaceId, placeId, explanation }: { routePlaceId: string; placeId: string; explanation: string }) =>
-      addAlternative(id, routePlaceId, { placeId, explanation }),
+      createAlternative(id, routePlaceId, { placeId, explanation }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['route', id] });
       setAltPicker(null);

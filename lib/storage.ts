@@ -1,5 +1,5 @@
-import * as SecureStore from 'expo-secure-store';
-import type { AppUser } from '../store/auth';
+﻿import * as SecureStore from 'expo-secure-store';
+import type { AppUser } from '@/store/auth';
 
 const TOKEN_KEY = 'app_token';
 const USER_KEY = 'app_user';

@@ -1,5 +1,5 @@
-import { api } from '../lib/api';
-import type { Place, Route, UserSummary } from '../types';
+﻿import { api } from '@/lib/api';
+import type { Place, Route, UserSummary } from '@/types';
 
 export type MeUser = {
   id: string;

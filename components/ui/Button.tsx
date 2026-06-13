@@ -1,5 +1,5 @@
-import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, ViewStyle } from 'react-native';
-import { colors, font, radius } from '../../constants/theme';
+﻿import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, ViewStyle } from 'react-native';
+import { colors, font, radius } from '@/constants/theme';
 
 type Variant = 'primary' | 'outline' | 'danger' | 'amber';
 

@@ -1,5 +1,5 @@
-import { StyleSheet, View, ViewProps } from 'react-native';
-import { colors, radius } from '../../constants/theme';
+﻿import { StyleSheet, View, ViewProps } from 'react-native';
+import { colors, radius } from '@/constants/theme';
 
 export function Card({ children, style, ...rest }: ViewProps) {
   return (

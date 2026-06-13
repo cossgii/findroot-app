@@ -1,6 +1,6 @@
-import { StyleSheet, Text, TouchableOpacity, ViewStyle } from 'react-native';
+﻿import { StyleSheet, Text, TouchableOpacity, ViewStyle } from 'react-native';
 import { useRouter } from 'expo-router';
-import { colors } from '../../constants/theme';
+import { colors } from '@/constants/theme';
 
 export function BackButton({ style }: { style?: ViewStyle }) {
   const router = useRouter();

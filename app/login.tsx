@@ -1,11 +1,11 @@
-import { useState } from 'react';
+﻿import { useState } from 'react';
 import { Alert, StyleSheet, Text, TouchableOpacity } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSetAtom } from 'jotai';
-import { userAtom } from '../store/auth';
-import { login } from '../services/auth';
-import { Button, Input, Screen } from '../components/ui';
-import { colors, font } from '../constants/theme';
+import { userAtom } from '@/store/auth';
+import { login } from '@/services/auth';
+import { Button, Input, Screen } from '@/components/ui';
+import { colors, font } from '@/constants/theme';
 
 export default function LoginScreen() {
   const router = useRouter();

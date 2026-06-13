@@ -1,5 +1,5 @@
-import { api } from '../lib/api';
-import type { Place, PlaceCategory } from '../types';
+﻿import { api } from '@/lib/api';
+import type { Place, PlaceCategory } from '@/types';
 
 export async function fetchPlace(placeId: string): Promise<Place> {
   const { data } = await api.get(`/api/places/${placeId}`);

@@ -1,10 +1,10 @@
-import { useState } from 'react';
+﻿import { useState } from 'react';
 import { Alert, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
-import { forgotPassword } from '../services/auth';
-import { Button, Input, BackButton } from '../components/ui';
-import { colors, font } from '../constants/theme';
+import { forgotPassword } from '@/services/auth';
+import { Button, Input, BackButton } from '@/components/ui';
+import { colors, font } from '@/constants/theme';
 
 export default function ForgotPasswordScreen() {
   const router = useRouter();

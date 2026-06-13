@@ -1,5 +1,5 @@
-import { api } from '../lib/api';
-import type { LikeResponse } from '../types';
+﻿import { api } from '@/lib/api';
+import type { LikeResponse } from '@/types';
 
 export async function addLike(target: { placeId: string } | { routeId: string }): Promise<LikeResponse> {
   const { data } = await api.post('/api/likes', target);

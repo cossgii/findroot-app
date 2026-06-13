@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+﻿import { useState, useEffect } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity, StyleSheet,
   Alert, ScrollView, KeyboardAvoidingView, Platform, ActivityIndicator,
@@ -7,9 +7,9 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import * as Location from 'expo-location';
-import { fetchPlace, updatePlace } from '../../services/places';
-import { CATEGORY_LABELS } from '../../types';
-import type { PlaceCategory } from '../../types';
+import { fetchPlace, updatePlace } from '@/services/places';
+import { CATEGORY_LABELS } from '@/types';
+import type { PlaceCategory } from '@/types';
 
 export default function EditPlaceScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();

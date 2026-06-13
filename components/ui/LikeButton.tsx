@@ -1,5 +1,5 @@
-import { StyleSheet, Text, TouchableOpacity } from 'react-native';
-import { colors, radius } from '../../constants/theme';
+﻿import { StyleSheet, Text, TouchableOpacity } from 'react-native';
+import { colors, radius } from '@/constants/theme';
 
 type Props = { liked: boolean; count: number; onPress: () => void };
 

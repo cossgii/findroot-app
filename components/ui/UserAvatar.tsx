@@ -1,5 +1,5 @@
-import { Image, StyleSheet, Text, View } from 'react-native';
-import { colors } from '../../constants/theme';
+﻿import { Image, StyleSheet, Text, View } from 'react-native';
+import { colors } from '@/constants/theme';
 
 type Props = { name: string; image?: string | null; size?: number; colorful?: boolean };
 

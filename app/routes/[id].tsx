@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+﻿import { useState, useEffect } from 'react';
 import {
   View, Text, ScrollView, StyleSheet, ActivityIndicator,
   TouchableOpacity, TextInput, Alert, KeyboardAvoidingView, Platform,
@@ -10,14 +10,15 @@ import { useAtomValue } from 'jotai';
 import {
   fetchRoute, fetchComments, postComment, deleteRoute, deleteComment,
   updateComment, setRepresentative,
-} from '../../services/routes';
-import { toggleLike } from '../../services/likes';
-import { openInMap } from '../../utils/maps';
-import { userAtom } from '../../store/auth';
-import { PURPOSE_LABELS, STOP_LABELS } from '../../types';
-import { Badge, Button, EmptyText, LikeButton, TopBar } from '../../components/ui';
-import { colors, font, radius } from '../../constants/theme';
-import type { RoutePlace, Comment, Alternative } from '../../types';
+} from '@/services/routes';
+import { toggleLike } from '@/services/likes';
+import { openInMap } from '@/utils/maps';
+import KakaoMap from '@/components/KakaoMap';
+import { userAtom } from '@/store/auth';
+import { PURPOSE_LABELS, STOP_LABELS } from '@/types';
+import { Badge, Button, EmptyText, LikeButton, TopBar } from '@/components/ui';
+import { colors, font, radius } from '@/constants/theme';
+import type { RoutePlace, Comment, Alternative } from '@/types';
 
 function AlternativeItem({ alt }: { alt: Alternative }) {
   return (
@@ -84,6 +85,14 @@ export default function RouteDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const user = useAtomValue(userAtom);
+
+  useEffect(() => {
+    if (!user) {
+      Alert.alert('로그인 필요', '루트는 로그인 후 이용할 수 있습니다.', [
+        { text: '확인', onPress: () => router.back() },
+      ]);
+    }
+  }, [user]);
   const queryClient = useQueryClient();
   const [commentText, setCommentText] = useState('');
   const [liked, setLiked] = useState<boolean | null>(null);
@@ -184,57 +193,82 @@ export default function RouteDetailScreen() {
 
   const sortedPlaces = [...route.places].sort((a, b) => a.order - b.order);
 
+  const hasMapData = sortedPlaces.some((s) => s.place.latitude && s.place.longitude);
+  const mapStops = sortedPlaces.filter((s) => s.place.latitude && s.place.longitude);
+
   return (
     <SafeAreaView style={{ flex: 1 }} edges={['top']}>
     <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-      <ScrollView style={styles.container}>
-        <TopBar
-          right={isOwner ? (
-            <>
-              <Button variant="amber" small label={route.isRepresentative ? '★ 대표' : '☆ 대표'} onPress={handleRepresentativeToggle} loading={representativeMutation.isPending} />
-              <Button variant="outline" small label="수정" onPress={() => router.push(`/edit-route/${id}`)} />
-              <Button variant="danger" small label="삭제" onPress={handleDeleteRoute} loading={deleteRouteMutation.isPending} />
-            </>
-          ) : undefined}
-        />
+      <View style={{ flex: 1 }}>
+        {hasMapData && (
+          <KakaoMap
+            center={{
+              lat: mapStops[0].place.latitude,
+              lng: mapStops[0].place.longitude,
+            }}
+            level={6}
+            markers={mapStops.map((s) => ({
+              id: s.place.id,
+              name: s.place.name,
+              latitude: s.place.latitude,
+              longitude: s.place.longitude,
+              label: String(s.order),
+            }))}
+            polyline={mapStops.map((s) => ({ lat: s.place.latitude, lng: s.place.longitude }))}
+            onMarkerPress={(placeId) => router.push(`/places/${placeId}`)}
+            style={styles.routeMap}
+          />
+        )}
 
-        <View style={styles.section}>
-          <View style={styles.routeHeader}>
-            <Text style={styles.routeName}>{route.name}</Text>
-            <Badge label={PURPOSE_LABELS[route.purpose]} />
-          </View>
-          <Text style={styles.routeDesc}>{route.description}</Text>
-          <TouchableOpacity onPress={() => router.push(`/users/${route.creator.id}`)}>
-            <Text style={styles.routeCreator}>by {route.creator.name}</Text>
-          </TouchableOpacity>
-          <LikeButton liked={isLiked} count={count} onPress={handleLike} />
-        </View>
+        <ScrollView style={styles.container}>
+          <TopBar
+            right={isOwner ? (
+              <>
+                <Button variant="amber" small label={route.isRepresentative ? '★ 대표' : '☆ 대표'} onPress={handleRepresentativeToggle} loading={representativeMutation.isPending} />
+                <Button variant="outline" small label="수정" onPress={() => router.push(`/edit-route/${id}`)} />
+                <Button variant="danger" small label="삭제" onPress={handleDeleteRoute} loading={deleteRouteMutation.isPending} />
+              </>
+            ) : undefined}
+          />
 
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>경유지 ({sortedPlaces.length})</Text>
-          {sortedPlaces.map((stop) => <StopItem key={stop.id} stop={stop} />)}
-        </View>
-
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>댓글 ({comments?.totalCount ?? 0})</Text>
-          {allComments.map((c) => (
-            <CommentItem
-              key={c.id} comment={c}
-              isOwner={user?.id === c.authorId}
-              onDelete={() => handleDeleteComment(c.id)}
-              onEdit={() => setEditingComment({ id: c.id, content: c.content })}
-            />
-          ))}
-          {allComments.length === 0 && !commentsLoading && <EmptyText>첫 댓글을 남겨보세요.</EmptyText>}
-          {comments && comments.currentPage < comments.totalPages && (
-            <TouchableOpacity style={styles.loadMoreBtn} onPress={() => setCommentPage((p) => p + 1)}>
-              {commentsLoading ? <ActivityIndicator size="small" /> : <Text style={styles.loadMoreText}>댓글 더보기</Text>}
+          <View style={styles.section}>
+            <View style={styles.routeHeader}>
+              <Text style={styles.routeName}>{route.name}</Text>
+              <Badge label={PURPOSE_LABELS[route.purpose]} />
+            </View>
+            <Text style={styles.routeDesc}>{route.description}</Text>
+            <TouchableOpacity onPress={() => router.push(`/users/${route.creator.id}`)}>
+              <Text style={styles.routeCreator}>by {route.creator.name}</Text>
             </TouchableOpacity>
-          )}
-        </View>
+            <LikeButton liked={isLiked} count={count} onPress={handleLike} />
+          </View>
 
-        <View style={{ height: 80 }} />
-      </ScrollView>
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>경유지 ({sortedPlaces.length})</Text>
+            {sortedPlaces.map((stop) => <StopItem key={stop.id} stop={stop} />)}
+          </View>
+
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>댓글 ({comments?.totalCount ?? 0})</Text>
+            {allComments.map((c) => (
+              <CommentItem
+                key={c.id} comment={c}
+                isOwner={user?.id === c.authorId}
+                onDelete={() => handleDeleteComment(c.id)}
+                onEdit={() => setEditingComment({ id: c.id, content: c.content })}
+              />
+            ))}
+            {allComments.length === 0 && !commentsLoading && <EmptyText>첫 댓글을 남겨보세요.</EmptyText>}
+            {comments && comments.currentPage < comments.totalPages && (
+              <TouchableOpacity style={styles.loadMoreBtn} onPress={() => setCommentPage((p) => p + 1)}>
+                {commentsLoading ? <ActivityIndicator size="small" /> : <Text style={styles.loadMoreText}>댓글 더보기</Text>}
+              </TouchableOpacity>
+            )}
+          </View>
+
+          <View style={{ height: 80 }} />
+        </ScrollView>
+      </View>
 
       {editingComment && (
         <View style={styles.inputRow}>
@@ -275,6 +309,7 @@ export default function RouteDetailScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.bg.white },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  routeMap: { height: 260 },
   section: { padding: 16, borderBottomWidth: 1, borderBottomColor: colors.divider },
   sectionTitle: { fontSize: font['2xl'], fontWeight: '700', marginBottom: 12, color: colors.text.primary },
   routeHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 },

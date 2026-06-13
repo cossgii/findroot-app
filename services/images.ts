@@ -1,4 +1,4 @@
-import { api } from '../lib/api';
+﻿import { api } from '@/lib/api';
 
 export async function getUploadUrl(fileName: string): Promise<{ signedUrl: string; publicUrl: string }> {
   const { data } = await api.post('/api/images/upload', { fileName });

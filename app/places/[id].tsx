@@ -1,16 +1,16 @@
-import { useState } from 'react';
+﻿import { useState } from 'react';
 import { Alert, Linking, ScrollView, StyleSheet, Text, TouchableOpacity, View, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAtomValue } from 'jotai';
-import { fetchPlace, deletePlace } from '../../services/places';
-import { toggleLike } from '../../services/likes';
-import { openInMap } from '../../utils/maps';
-import { userAtom } from '../../store/auth';
-import { CATEGORY_LABELS } from '../../types';
-import { Badge, Button, LikeButton, TopBar } from '../../components/ui';
-import { colors, font } from '../../constants/theme';
+import { fetchPlace, deletePlace } from '@/services/places';
+import { toggleLike } from '@/services/likes';
+import { openInMap } from '@/utils/maps';
+import { userAtom } from '@/store/auth';
+import { CATEGORY_LABELS } from '@/types';
+import { Badge, Button, LikeButton, TopBar } from '@/components/ui';
+import { colors, font } from '@/constants/theme';
 
 export default function PlaceDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();

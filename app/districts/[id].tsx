@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+﻿import { useState, useEffect } from 'react';
 import {
   ActivityIndicator, Alert, FlatList, Modal, ScrollView,
   StyleSheet, Text, TouchableOpacity, View,
@@ -6,13 +6,16 @@ import {
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
 import { useAtomValue } from 'jotai';
-import { fetchDistrictPlaces, fetchDistrictRoutes } from '../../services/districts';
-import { PlaceCard, RouteCard } from '../../components';
-import { BackButton, Chip, EmptyText, Screen } from '../../components/ui';
-import { CATEGORY_LABELS, PURPOSE_LABELS } from '../../types';
-import { userAtom } from '../../store/auth';
-import { colors, font, radius, spacing } from '../../constants/theme';
-import type { PlaceCategory, RoutePurpose, Place, Route } from '../../types';
+import { fetchDistrictPlaces, fetchDistrictRoutes } from '@/services/districts';
+import { fetchPlaceLocations } from '@/services/places';
+import { PlaceCard, RouteCard } from '@/components';
+import KakaoMap from '@/components/KakaoMap';
+import { BackButton, Chip, EmptyText, Screen } from '@/components/ui';
+import { CATEGORY_LABELS, PURPOSE_LABELS } from '@/types';
+import { userAtom } from '@/store/auth';
+import { SEOUL_DISTRICTS } from '@/constants/districts';
+import { colors, font, radius, spacing } from '@/constants/theme';
+import type { PlaceCategory, RoutePurpose, Place, Route } from '@/types';
 
 type Mode = 'places' | 'routes';
 type Sort = 'recent' | 'likes';
@@ -38,6 +41,16 @@ export default function DistrictScreen() {
 
   const districtName = decodeURIComponent(name ?? id);
   const isAll = id === 'all';
+  const districtInfo = SEOUL_DISTRICTS.find((d) => d.id === id);
+  const mapCenter = districtInfo
+    ? { lat: districtInfo.lat, lng: districtInfo.lng }
+    : { lat: 37.5665, lng: 126.978 };
+
+  const { data: placeLocations = [] } = useQuery({
+    queryKey: ['place-locations', id],
+    queryFn: () => fetchPlaceLocations(isAll ? undefined : districtName),
+    enabled: mode === 'places',
+  });
 
   const { data: placesData, isLoading: placesLoading } = useQuery({
     queryKey: ['district-places', id, placeSort, category, placePage],
@@ -126,6 +139,21 @@ export default function DistrictScreen() {
       <BackButton style={styles.back} />
       <Text style={styles.heading}>{districtName}</Text>
 
+      {mode === 'places' && (
+        <KakaoMap
+          center={mapCenter}
+          level={isAll ? 8 : 6}
+          markers={placeLocations.map((p: any) => ({
+            id: p.id,
+            name: p.name,
+            latitude: p.latitude,
+            longitude: p.longitude,
+          }))}
+          onMarkerPress={(placeId) => router.push(`/places/${placeId}`)}
+          style={styles.map}
+        />
+      )}
+
       <View style={styles.toggle}>
         <TouchableOpacity
           style={[styles.toggleBtn, mode === 'places' && styles.toggleActive]}
@@ -169,6 +197,7 @@ export default function DistrictScreen() {
       {mode === 'places' ? (
         placesLoading && placePage === 1 ? <ActivityIndicator style={{ flex: 1 }} size="large" /> : (
           <FlatList
+            style={{ flex: 1 }}
             data={allPlaces}
             keyExtractor={(item) => item.id}
             contentContainerStyle={styles.list}
@@ -185,6 +214,7 @@ export default function DistrictScreen() {
         !purpose ? null :
         routesLoading && routePage === 1 ? <ActivityIndicator style={{ flex: 1 }} size="large" /> : (
           <FlatList
+            style={{ flex: 1 }}
             data={allRoutes}
             keyExtractor={(item) => item.id}
             contentContainerStyle={styles.list}
@@ -254,7 +284,8 @@ const styles = StyleSheet.create({
   purposeChange: { marginLeft: spacing.sm },
   purposeChangeText: { fontSize: font.sm, color: colors.primary, fontWeight: '600' },
 
-  list: { padding: spacing.lg, gap: 10 },
+  map: { height: 260, marginBottom: 4 },
+  list: { gap: 10, paddingBottom: spacing.lg },
   footerLoader: { marginVertical: 16 },
 
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'flex-end' },

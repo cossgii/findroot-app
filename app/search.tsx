@@ -1,19 +1,30 @@
-import { useState, useEffect, useRef } from 'react';
-import { ActivityIndicator, FlatList, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
-import { Screen } from '../components/ui';
+﻿import { useState, useEffect, useRef } from 'react';
+import { ActivityIndicator, Alert, FlatList, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { Screen } from '@/components/ui';
 import { useRouter } from 'expo-router';
-import { searchUsers } from '../services/users';
-import { UserListItem } from '../components';
-import { EmptyText } from '../components/ui';
-import { colors, font } from '../constants/theme';
-import type { UserSummary } from '../types';
+import { useAtomValue } from 'jotai';
+import { searchUsers } from '@/services/users';
+import { UserListItem } from '@/components';
+import { EmptyText } from '@/components/ui';
+import { userAtom } from '@/store/auth';
+import { colors, font } from '@/constants/theme';
+import type { UserSummary } from '@/types';
 
 export default function SearchScreen() {
   const router = useRouter();
+  const user = useAtomValue(userAtom);
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<UserSummary[]>([]);
   const [loading, setLoading] = useState(false);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    if (!user) {
+      Alert.alert('로그인 필요', '사용자 검색은 로그인 후 이용할 수 있습니다.', [
+        { text: '확인', onPress: () => router.back() },
+      ]);
+    }
+  }, [user]);
 
   useEffect(() => {
     if (debounceRef.current) clearTimeout(debounceRef.current);

@@ -1,16 +1,16 @@
-import { useState, useEffect } from 'react';
+﻿import { useState, useEffect } from 'react';
 import { ActivityIndicator, FlatList, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { Screen } from '../../components/ui';
+import { Screen } from '@/components/ui';
 import { useRouter } from 'expo-router';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAtomValue, useSetAtom } from 'jotai';
-import { userAtom } from '../../store/auth';
-import { logout } from '../../services/auth';
-import { fetchMe, fetchUserPlaces, fetchUserRoutes, fetchLikedPlaces, fetchLikedRoutes, fetchFollowers, fetchFollowing } from '../../services/users';
-import { PlaceCard, RouteCard, UserListItem } from '../../components';
-import { Button, Chip, EmptyText, TabBar, UserAvatar } from '../../components/ui';
-import { colors, font } from '../../constants/theme';
-import type { Place, Route } from '../../types';
+import { userAtom } from '@/store/auth';
+import { logout } from '@/services/auth';
+import { fetchMe, fetchUserPlaces, fetchUserRoutes, fetchLikedPlaces, fetchLikedRoutes, fetchFollowers, fetchFollowing } from '@/services/users';
+import { PlaceCard, RouteCard, UserListItem } from '@/components';
+import { Button, Chip, EmptyText, TabBar, UserAvatar } from '@/components/ui';
+import { colors, font } from '@/constants/theme';
+import type { Place, Route } from '@/types';
 
 type Tab = 'content' | 'liked' | 'social';
 type ContentTab = 'routes' | 'places';

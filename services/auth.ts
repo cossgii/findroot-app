@@ -1,6 +1,6 @@
-import { api } from '../lib/api';
-import { getStoredUser, setToken, setStoredUser, clearToken, clearStoredUser } from '../lib/storage';
-import type { AppUser } from '../store/auth';
+﻿import { api } from '@/lib/api';
+import { getStoredUser, setToken, setStoredUser, clearToken, clearStoredUser } from '@/lib/storage';
+import type { AppUser } from '@/store/auth';
 
 export { getStoredUser };
 

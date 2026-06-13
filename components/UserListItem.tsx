@@ -1,9 +1,9 @@
-import { StyleSheet, Text, TouchableOpacity } from 'react-native';
+﻿import { StyleSheet, Text, TouchableOpacity } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useQueryClient } from '@tanstack/react-query';
 import { UserAvatar } from './ui';
-import { colors, font } from '../constants/theme';
-import type { UserSummary } from '../types';
+import { colors, font } from '@/constants/theme';
+import type { UserSummary } from '@/types';
 
 type Props = { user: UserSummary; showChevron?: boolean };
 

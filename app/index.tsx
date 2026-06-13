@@ -1,8 +1,8 @@
-import { useEffect } from 'react';
+﻿import { useEffect } from 'react';
 import { useRouter } from 'expo-router';
 import { useSetAtom } from 'jotai';
-import { userAtom } from '../store/auth';
-import { getStoredUser } from '../services/auth';
+import { userAtom } from '@/store/auth';
+import { getStoredUser } from '@/services/auth';
 import { View, ActivityIndicator } from 'react-native';
 
 export default function Index() {

@@ -1,9 +1,9 @@
-import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+﻿import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Badge } from './ui';
-import { colors, font, radius } from '../constants/theme';
-import { CATEGORY_LABELS } from '../types';
-import type { Place } from '../types';
+import { colors, font, radius } from '@/constants/theme';
+import { CATEGORY_LABELS } from '@/types';
+import type { Place } from '@/types';
 
 export function PlaceCard({ place }: { place: Place }) {
   const router = useRouter();

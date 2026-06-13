@@ -1,9 +1,9 @@
-import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+﻿import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Badge } from './ui';
-import { colors, font, radius } from '../constants/theme';
-import { PURPOSE_LABELS } from '../types';
-import type { Route } from '../types';
+import { colors, font, radius } from '@/constants/theme';
+import { PURPOSE_LABELS } from '@/types';
+import type { Route } from '@/types';
 
 type Props = { route: Route; showCreator?: boolean };
 
