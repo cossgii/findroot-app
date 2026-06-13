@@ -112,7 +112,7 @@ export default function HomeScreen() {
 
   const { data: placeLocations = EMPTY_LOCS, isLoading: placeLocsLoading } = useQuery<PlaceLoc[]>({
     queryKey: ['place-locations', selectedDistrict, nearbyDistrictName],
-    queryFn: () => fetchPlaceLocations(isNearby ? nearbyDistrictName : isAll ? undefined : districtName),
+    queryFn: () => fetchPlaceLocations(isNearby ? nearbyDistrictName : isAll ? '전체' : districtName),
     enabled: mode === 'places',
   });
 
