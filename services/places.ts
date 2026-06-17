@@ -21,7 +21,7 @@ type PlacePayload = {
   address?: string;
   district?: string;
   description: string;
-  link?: string;
+  link?: string | null;
   category: PlaceCategory;
 };
 
@@ -44,8 +44,11 @@ export async function checkPlaceExists(address: string): Promise<boolean> {
   return data.exists;
 }
 
-export async function fetchPlaceLocations(district?: string) {
-  const { data } = await api.get('/api/places/locations', { params: district ? { district } : undefined });
+export async function fetchPlaceLocations(district?: string, targetUserId?: string) {
+  const params: Record<string, string> = {};
+  if (district) params.district = district;
+  if (targetUserId) params.targetUserId = targetUserId;
+  const { data } = await api.get('/api/places/locations', { params: Object.keys(params).length ? params : undefined });
   return data;
 }
 

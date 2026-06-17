@@ -9,6 +9,8 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { fetchRoute, updateRoute } from '@/services/routes';
 import { createAlternative, deleteAlternative } from '@/services/alternatives';
 import { searchPlaces } from '@/services/places';
+import { updateRouteSchema } from '@/lib/schemas/route';
+import { getErrorMessage } from '@/lib/errors';
 import { SEOUL_DISTRICTS } from '@/constants/districts';
 import { PURPOSE_LABELS, STOP_LABELS, CATEGORY_LABELS } from '@/types';
 import type { RoutePurpose, RouteStopLabel, Place, Alternative } from '@/types';
@@ -136,7 +138,7 @@ export default function EditRouteScreen() {
         { text: '확인', onPress: () => router.replace(`/routes/${id}`) },
       ]);
     },
-    onError: () => Alert.alert('오류', '루트 수정에 실패했습니다.'),
+    onError: (error) => Alert.alert('오류', getErrorMessage(error, '루트 수정에 실패했습니다.')),
   });
 
   const addAltMutation = useMutation({
@@ -148,14 +150,14 @@ export default function EditRouteScreen() {
       setAltPendingPlace(null);
       setAltExplanation('');
     },
-    onError: () => Alert.alert('오류', '예비 장소 추가에 실패했습니다.'),
+    onError: (error) => Alert.alert('오류', getErrorMessage(error, '예비 장소 추가에 실패했습니다.')),
   });
 
   const deleteAltMutation = useMutation({
     mutationFn: ({ routePlaceId, altId }: { routePlaceId: string; altId: string }) =>
       deleteAlternative(id, routePlaceId, altId),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['route', id] }),
-    onError: () => Alert.alert('오류', '예비 장소 삭제에 실패했습니다.'),
+    onError: (error) => Alert.alert('오류', getErrorMessage(error, '예비 장소 삭제에 실패했습니다.')),
   });
 
   function addStop() {
@@ -184,8 +186,14 @@ export default function EditRouteScreen() {
   }
 
   function handleSubmit() {
-    if (!name.trim()) { Alert.alert('오류', '루트 이름을 입력해주세요.'); return; }
-    if (stops.length < 2) { Alert.alert('오류', '경유지를 최소 2개 추가해주세요.'); return; }
+    const result = updateRouteSchema.safeParse({
+      name: name.trim(),
+      places: stops.map((s, i) => ({ placeId: s.place.id, order: i + 1, label: s.label })),
+    });
+    if (!result.success) {
+      Alert.alert('오류', result.error.issues[0]?.message ?? '입력값을 확인해주세요.');
+      return;
+    }
     mutation.mutate();
   }
 

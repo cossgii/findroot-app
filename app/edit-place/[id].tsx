@@ -8,6 +8,8 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import * as Location from 'expo-location';
 import { fetchPlace, updatePlace } from '@/services/places';
+import { createPlaceSchema } from '@/lib/schemas/place';
+import { getErrorMessage } from '@/lib/errors';
 import { CATEGORY_LABELS } from '@/types';
 import type { PlaceCategory } from '@/types';
 
@@ -26,6 +28,7 @@ export default function EditPlaceScreen() {
   });
   const [locating, setLocating] = useState(false);
   const [initialized, setInitialized] = useState(false);
+  const [linkError, setLinkError] = useState<string | null>(null);
 
   const { data: place, isLoading } = useQuery({
     queryKey: ['place', id],
@@ -59,7 +62,7 @@ export default function EditPlaceScreen() {
         latitude: lat,
         longitude: lng,
         address: form.address.trim() || undefined,
-        link: form.link.trim() || undefined,
+        link: form.link.trim() || null,
       });
     },
     onSuccess: () => {
@@ -68,7 +71,7 @@ export default function EditPlaceScreen() {
         { text: '확인', onPress: () => router.replace(`/places/${id}`) },
       ]);
     },
-    onError: () => Alert.alert('오류', '장소 수정에 실패했습니다.'),
+    onError: (error) => Alert.alert('오류', getErrorMessage(error, '장소 수정에 실패했습니다.')),
   });
 
   function set(key: keyof typeof form) {
@@ -94,16 +97,24 @@ export default function EditPlaceScreen() {
   }
 
   function handleSubmit() {
-    if (!form.name.trim() || !form.description.trim()) {
-      Alert.alert('오류', '이름과 설명을 입력해주세요.');
-      return;
-    }
     const lat = parseFloat(form.latitude);
     const lng = parseFloat(form.longitude);
-    if (isNaN(lat) || isNaN(lng)) {
-      Alert.alert('오류', '올바른 좌표를 입력해주세요.');
+    const result = createPlaceSchema.safeParse({
+      name: form.name.trim(),
+      description: form.description.trim(),
+      category: form.category,
+      latitude: lat,
+      longitude: lng,
+      address: form.address.trim() || undefined,
+      link: form.link.trim() || null,
+    });
+    if (!result.success) {
+      const linkIssue = result.error.issues.find((i) => i.path[0] === 'link');
+      setLinkError(linkIssue?.message ?? null);
+      if (!linkIssue) Alert.alert('오류', result.error.issues[0]?.message ?? '입력값을 확인해주세요.');
       return;
     }
+    setLinkError(null);
     mutation.mutate();
   }
 
@@ -143,7 +154,8 @@ export default function EditPlaceScreen() {
         <TextInput style={styles.input} value={form.address} onChangeText={set('address')} placeholder="주소 입력" />
 
         <Text style={styles.label}>링크 (선택)</Text>
-        <TextInput style={styles.input} value={form.link} onChangeText={set('link')} placeholder="https://..." autoCapitalize="none" keyboardType="url" />
+        <TextInput style={styles.input} value={form.link} onChangeText={(v) => { set('link')(v); setLinkError(null); }} placeholder="https://..." autoCapitalize="none" keyboardType="url" />
+        {linkError && <Text style={styles.errorText}>{linkError}</Text>}
 
         <Text style={styles.label}>좌표 *</Text>
         <TouchableOpacity style={styles.gpsButton} onPress={fillCurrentLocation} disabled={locating}>
@@ -170,6 +182,7 @@ const styles = StyleSheet.create({
   title: { fontSize: 24, fontWeight: 'bold', marginBottom: 24 },
   label: { fontSize: 14, fontWeight: '600', color: '#333', marginBottom: 6, marginTop: 14 },
   input: { borderWidth: 1, borderColor: '#ddd', borderRadius: 8, padding: 12, fontSize: 15, backgroundColor: '#fafafa' },
+  errorText: { fontSize: 13, color: '#e53e3e', marginTop: 4 },
   multiline: { height: 80, textAlignVertical: 'top' },
   categoryRow: { flexDirection: 'row', gap: 10 },
   categoryBtn: { flex: 1, borderWidth: 1, borderColor: '#ddd', borderRadius: 8, paddingVertical: 10, alignItems: 'center' },

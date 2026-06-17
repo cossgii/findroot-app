@@ -18,8 +18,8 @@ export function UserListItem({ user, showChevron = false }: Props) {
 
   return (
     <TouchableOpacity style={styles.item} onPress={handlePress}>
-      <UserAvatar name={user.name} image={user.image} size={38} />
-      <Text style={styles.name}>{user.name}</Text>
+      <UserAvatar name={user.name ?? '?'} image={user.image} size={38} />
+      <Text style={styles.name}>{user.name ?? '사용자'}</Text>
       {showChevron && <Text style={styles.chevron}>›</Text>}
     </TouchableOpacity>
   );

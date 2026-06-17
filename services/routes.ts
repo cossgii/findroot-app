@@ -27,7 +27,7 @@ export async function deleteComment(routeId: string, commentId: string): Promise
   await api.delete(`/api/routes/${routeId}/comments/${commentId}`);
 }
 
-export async function fetchFeaturedRoutes(params?: { purpose?: string; districtId?: string }): Promise<Route[]> {
+export async function fetchFeaturedRoutes(params?: { purpose?: string; districtId?: string; creatorId?: string }): Promise<Route[]> {
   const { data } = await api.get('/api/routes/featured', { params });
   return data.routes ?? data;
 }

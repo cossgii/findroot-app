@@ -4,6 +4,7 @@ import { useRouter } from 'expo-router';
 import { useSetAtom } from 'jotai';
 import { userAtom } from '@/store/auth';
 import { login } from '@/services/auth';
+import { getErrorMessage } from '@/lib/errors';
 import { Button, Input, Screen } from '@/components/ui';
 import { colors, font } from '@/constants/theme';
 
@@ -21,9 +22,8 @@ export default function LoginScreen() {
       const user = await login(loginId, password);
       setUser(user);
       router.replace('/(tabs)');
-    } catch (e: any) {
-      const msg = e?.response?.data?.message ?? '로그인에 실패했습니다.';
-      Alert.alert('로그인 실패', msg);
+    } catch (error) {
+      Alert.alert('로그인 실패', getErrorMessage(error, '로그인에 실패했습니다.'));
     } finally {
       setLoading(false);
     }

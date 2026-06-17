@@ -1,16 +1,23 @@
 ﻿import { useState } from 'react';
-import { Alert, Linking, ScrollView, StyleSheet, Text, TouchableOpacity, View, ActivityIndicator } from 'react-native';
+import { Alert, Linking, Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAtomValue } from 'jotai';
 import { fetchPlace, deletePlace } from '@/services/places';
 import { toggleLike } from '@/services/likes';
-import { openInMap } from '@/utils/maps';
+import { getErrorMessage } from '@/lib/errors';
 import { userAtom } from '@/store/auth';
 import { CATEGORY_LABELS } from '@/types';
 import { Badge, Button, LikeButton, TopBar } from '@/components/ui';
 import { colors, font } from '@/constants/theme';
+
+function openAddress(name: string, lat: number, lng: number) {
+  const url = Platform.OS === 'ios'
+    ? `maps://?q=${encodeURIComponent(name)}&ll=${lat},${lng}`
+    : `geo:${lat},${lng}?q=${encodeURIComponent(name)}`;
+  Linking.openURL(url);
+}
 
 export default function PlaceDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -32,7 +39,7 @@ export default function PlaceDetailScreen() {
       queryClient.invalidateQueries({ queryKey: ['places'] });
       router.back();
     },
-    onError: () => Alert.alert('오류', '장소 삭제에 실패했습니다.'),
+    onError: (error) => Alert.alert('오류', getErrorMessage(error, '장소 삭제에 실패했습니다.')),
   });
 
   if (isLoading) return <ActivityIndicator style={{ flex: 1 }} size="large" />;
@@ -54,8 +61,8 @@ export default function PlaceDetailScreen() {
       const res = await toggleLike(isLiked, { placeId: id });
       setLiked(res.liked);
       setLikeCount(res.count);
-    } catch {
-      Alert.alert('오류', '좋아요 처리에 실패했습니다.');
+    } catch (error) {
+      Alert.alert('오류', getErrorMessage(error, '좋아요 처리에 실패했습니다.'));
     }
   }
 
@@ -85,13 +92,10 @@ export default function PlaceDetailScreen() {
         </View>
 
         {place.address ? (
-          <TouchableOpacity style={styles.addressRow} onPress={() => openInMap(place.name, place.latitude, place.longitude)}>
+          <TouchableOpacity onPress={() => openAddress(place.name, place.latitude, place.longitude)}>
             <Text style={styles.address}>{place.address}</Text>
-            <Text style={styles.addressLink}>지도 보기</Text>
           </TouchableOpacity>
-        ) : (
-          <Button variant="outline" small label="지도에서 보기" onPress={() => openInMap(place.name, place.latitude, place.longitude)} style={styles.mapBtn} />
-        )}
+        ) : null}
 
         <Text style={styles.description}>{place.description}</Text>
         {place.link ? (
@@ -124,10 +128,7 @@ const styles = StyleSheet.create({
   section: { padding: 16, borderBottomWidth: 1, borderBottomColor: colors.divider },
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 },
   name: { fontSize: font['3xl'], fontWeight: 'bold', flex: 1, marginRight: 8 },
-  addressRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
-  address: { fontSize: font.base, color: colors.text.secondary, flex: 1 },
-  addressLink: { fontSize: font.md, color: colors.primary, marginLeft: 8 },
-  mapBtn: { alignSelf: 'flex-start', marginBottom: 12 },
+  address: { fontSize: font.base, color: colors.text.secondary, marginBottom: 12, textDecorationLine: 'underline' },
   description: { fontSize: font.lg, color: colors.text.body, lineHeight: 22 },
   link: { color: colors.primary, fontSize: font.base, marginTop: 10, textDecorationLine: 'underline' },
   creatorLabel: { fontSize: font.sm, color: colors.text.hint, marginBottom: 2 },

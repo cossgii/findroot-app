@@ -8,6 +8,8 @@ import * as ImagePicker from 'expo-image-picker';
 import { fetchMe, updateMe, updatePassword } from '@/services/users';
 import { getStoredUser, setStoredUser } from '@/lib/storage';
 import { uploadImage } from '@/services/images';
+import { changePasswordSchema } from '@/lib/schemas/auth';
+import { getErrorMessage } from '@/lib/errors';
 import { userAtom } from '@/store/auth';
 import { BackButton, Button, Card, Input, UserAvatar } from '@/components/ui';
 import { colors, font } from '@/constants/theme';
@@ -25,7 +27,7 @@ export default function EditProfileScreen() {
   const [uploadingImage, setUploadingImage] = useState(false);
   const [pwForm, setPwForm] = useState({ currentPassword: '', newPassword: '', confirmNew: '' });
 
-  if (me && !nameReady) { setName(me.name); setNameReady(true); }
+  if (me && !nameReady) { setName(me.name ?? ''); setNameReady(true); }
 
   async function handlePickImage() {
     const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -61,7 +63,7 @@ export default function EditProfileScreen() {
       setImageUri(null);
       Alert.alert('완료', '프로필이 변경됐습니다.');
     },
-    onError: () => Alert.alert('오류', '프로필 변경에 실패했습니다.'),
+    onError: (error) => Alert.alert('오류', getErrorMessage(error, '프로필 변경에 실패했습니다.')),
   });
 
   const pwMutation = useMutation({
@@ -70,16 +72,15 @@ export default function EditProfileScreen() {
       setPwForm({ currentPassword: '', newPassword: '', confirmNew: '' });
       Alert.alert('완료', '비밀번호가 변경됐습니다.');
     },
-    onError: () => Alert.alert('오류', '비밀번호 변경에 실패했습니다. 현재 비밀번호를 확인해주세요.'),
+    onError: (error) => Alert.alert('오류', getErrorMessage(error, '비밀번호 변경에 실패했습니다. 현재 비밀번호를 확인해주세요.')),
   });
 
-  const pwRegex = /^(?=.*[a-zA-Z])(?=.*\d)(?=.*[@$&*?!%])[A-Za-z\d!@$%&*?]{8,15}$/;
-
   function handlePasswordChange() {
-    const { currentPassword, newPassword, confirmNew } = pwForm;
-    if (!currentPassword || !newPassword || !confirmNew) { Alert.alert('오류', '모든 항목을 입력해주세요.'); return; }
-    if (newPassword !== confirmNew) { Alert.alert('오류', '새 비밀번호가 일치하지 않습니다.'); return; }
-    if (!pwRegex.test(newPassword)) { Alert.alert('오류', '영문, 숫자, 특수문자(@$&*?!%)를 모두 포함한 8~15자여야 합니다.'); return; }
+    const result = changePasswordSchema.safeParse(pwForm);
+    if (!result.success) {
+      Alert.alert('오류', result.error.issues[0]?.message ?? '입력값을 확인해주세요.');
+      return;
+    }
     pwMutation.mutate();
   }
 

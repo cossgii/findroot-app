@@ -3,6 +3,7 @@ import { Alert, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, To
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { forgotPassword } from '@/services/auth';
+import { getErrorMessage } from '@/lib/errors';
 import { Button, Input, BackButton } from '@/components/ui';
 import { colors, font } from '@/constants/theme';
 
@@ -22,8 +23,8 @@ export default function ForgotPasswordScreen() {
     try {
       await forgotPassword(loginId.trim(), email.trim());
       setSent(true);
-    } catch {
-      Alert.alert('오류', '요청에 실패했습니다. 아이디와 이메일을 확인해주세요.');
+    } catch (error) {
+      Alert.alert('오류', getErrorMessage(error, '요청에 실패했습니다. 아이디와 이메일을 확인해주세요.'));
     } finally {
       setLoading(false);
     }

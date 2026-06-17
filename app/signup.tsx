@@ -3,6 +3,8 @@ import { Alert, ScrollView, StyleSheet, Text, TouchableOpacity } from 'react-nat
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { signup } from '@/services/auth';
+import { signupSchema } from '@/lib/schemas/auth';
+import { getErrorMessage } from '@/lib/errors';
 import { Button, Input } from '@/components/ui';
 import { colors, font } from '@/constants/theme';
 
@@ -16,20 +18,17 @@ export default function SignupScreen() {
   }
 
   async function handleSignup() {
-    if (!form.name || !form.loginId || !form.email || !form.password || !form.confirmPassword) {
-      Alert.alert('오류', '모든 항목을 입력해주세요.');
-      return;
-    }
-    if (form.password !== form.confirmPassword) {
-      Alert.alert('오류', '비밀번호가 일치하지 않습니다.');
+    const result = signupSchema.safeParse(form);
+    if (!result.success) {
+      Alert.alert('오류', result.error.issues[0]?.message ?? '입력값을 확인해주세요.');
       return;
     }
     setLoading(true);
     try {
-      await signup(form);
+      await signup(result.data);
       Alert.alert('가입 완료', '로그인해주세요.', [{ text: '확인', onPress: () => router.replace('/login') }]);
-    } catch {
-      Alert.alert('가입 실패', '이미 사용 중인 아이디 또는 이메일일 수 있습니다.');
+    } catch (error) {
+      Alert.alert('가입 실패', getErrorMessage(error, '이미 사용 중인 아이디 또는 이메일일 수 있습니다.'));
     } finally {
       setLoading(false);
     }

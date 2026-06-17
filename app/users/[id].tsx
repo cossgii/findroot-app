@@ -5,11 +5,12 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAtomValue } from 'jotai';
 import { fetchUser, fetchUserPlaces, fetchUserRoutes, fetchFollowing, follow, unfollow } from '@/services/users';
+import { getErrorMessage } from '@/lib/errors';
 import { userAtom } from '@/store/auth';
 import { PlaceCard, RouteCard } from '@/components';
 import { BackButton, Button, TabBar, UserAvatar, EmptyText } from '@/components/ui';
 import { colors, font } from '@/constants/theme';
-import type { Place, Route } from '@/types';
+import type { Place, Route, UserSummary } from '@/types';
 
 type Tab = 'routes' | 'places';
 
@@ -52,12 +53,12 @@ export default function UserProfileScreen() {
     enabled: tab === 'places',
   });
 
-  const { data: followingList } = useQuery({
+  const { data: followingData } = useQuery({
     queryKey: ['following'],
-    queryFn: fetchFollowing,
+    queryFn: () => fetchFollowing(),
     enabled: !!currentUser && !isMe,
   });
-  const isFollowing = followingList?.data?.some((u) => u.id === id) ?? false;
+  const isFollowing = followingData?.data?.some((u: UserSummary) => u.id === id) ?? false;
 
   useEffect(() => {
     if (routesData?.routes) {
@@ -74,7 +75,7 @@ export default function UserProfileScreen() {
   const followMutation = useMutation({
     mutationFn: () => (isFollowing ? unfollow(id) : follow(id)),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['following'] }),
-    onError: () => Alert.alert('오류', '팔로우 처리에 실패했습니다.'),
+    onError: (error) => Alert.alert('오류', getErrorMessage(error, '팔로우 처리에 실패했습니다.')),
   });
 
   const displayName = profileUser?.name ?? '사용자';

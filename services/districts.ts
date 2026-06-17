@@ -7,6 +7,7 @@ type DistrictPlacesParams = {
   sort?: 'recent' | 'likes';
   category?: PlaceCategory;
   page?: number;
+  targetUserId?: string;
 };
 
 export type DistrictPlacesResponse = {
@@ -26,6 +27,7 @@ type DistrictRoutesParams = {
   sort?: 'recent' | 'likes';
   purpose?: RoutePurpose;
   page?: number;
+  targetUserId?: string;
 };
 
 export type DistrictRoutesResponse = {

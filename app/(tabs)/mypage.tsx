@@ -1,7 +1,7 @@
-﻿import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { ActivityIndicator, FlatList, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Screen } from '@/components/ui';
-import { useRouter } from 'expo-router';
+import { useFocusEffect, useRouter } from 'expo-router';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAtomValue, useSetAtom } from 'jotai';
 import { userAtom } from '@/store/auth';
@@ -73,17 +73,44 @@ export default function MypageScreen() {
   });
 
   useEffect(() => {
-    if (myRoutesData?.routes) setAllMyRoutes((p) => myRoutesPage === 1 ? myRoutesData.routes : [...p, ...myRoutesData.routes]);
+    if (myRoutesData?.routes) setAllMyRoutes((p) => {
+      if (myRoutesData.currentPage === 1) return myRoutesData.routes;
+      const seen = new Set(p.map((i) => i.id));
+      return [...p, ...myRoutesData.routes.filter((i) => !seen.has(i.id))];
+    });
   }, [myRoutesData]);
+
   useEffect(() => {
-    if (myPlacesData?.places) setAllMyPlaces((p) => myPlacesPage === 1 ? myPlacesData.places : [...p, ...myPlacesData.places]);
+    if (myPlacesData?.places) setAllMyPlaces((p) => {
+      if (myPlacesData.currentPage === 1) return myPlacesData.places;
+      const seen = new Set(p.map((i) => i.id));
+      return [...p, ...myPlacesData.places.filter((i) => !seen.has(i.id))];
+    });
   }, [myPlacesData]);
+
   useEffect(() => {
-    if (likedRoutesData?.routes) setAllLikedRoutes((p) => likedRoutesPage === 1 ? likedRoutesData.routes : [...p, ...likedRoutesData.routes]);
+    if (likedRoutesData?.routes) setAllLikedRoutes((p) => {
+      if (likedRoutesData.currentPage === 1) return likedRoutesData.routes;
+      const seen = new Set(p.map((i) => i.id));
+      return [...p, ...likedRoutesData.routes.filter((i) => !seen.has(i.id))];
+    });
   }, [likedRoutesData]);
+
   useEffect(() => {
-    if (likedPlacesData?.places) setAllLikedPlaces((p) => likedPlacesPage === 1 ? likedPlacesData.places : [...p, ...likedPlacesData.places]);
+    if (likedPlacesData?.places) setAllLikedPlaces((p) => {
+      if (likedPlacesData.currentPage === 1) return likedPlacesData.places;
+      const seen = new Set(p.map((i) => i.id));
+      return [...p, ...likedPlacesData.places.filter((i) => !seen.has(i.id))];
+    });
   }, [likedPlacesData]);
+
+  useFocusEffect(
+    useCallback(() => {
+      if (!user) return;
+      setMyPlacesPage(1);
+      queryClient.refetchQueries({ queryKey: ['my-places', user.id] });
+    }, [user, queryClient])
+  );
 
   function switchContentTab(t: ContentTab) {
     setContentTab(t);
@@ -137,7 +164,7 @@ export default function MypageScreen() {
       />
 
       {tab === 'content' && (
-        <>
+        <View style={{ flex: 1 }}>
           <View style={styles.subTabRow}>
             <Chip label="루트" active={contentTab === 'routes'} onPress={() => switchContentTab('routes')} />
             <Chip label="장소" active={contentTab === 'places'} onPress={() => switchContentTab('places')} />
@@ -151,6 +178,7 @@ export default function MypageScreen() {
           {contentTab === 'routes' ? (
             myRoutesLoading && myRoutesPage === 1 ? <ActivityIndicator style={{ flex: 1 }} /> : (
               <FlatList
+                style={{ flex: 1 }}
                 data={allMyRoutes}
                 keyExtractor={(i) => i.id}
                 contentContainerStyle={styles.list}
@@ -166,6 +194,7 @@ export default function MypageScreen() {
           ) : (
             myPlacesLoading && myPlacesPage === 1 ? <ActivityIndicator style={{ flex: 1 }} /> : (
               <FlatList
+                style={{ flex: 1 }}
                 data={allMyPlaces}
                 keyExtractor={(i) => i.id}
                 contentContainerStyle={styles.list}
@@ -179,11 +208,11 @@ export default function MypageScreen() {
               />
             )
           )}
-        </>
+        </View>
       )}
 
       {tab === 'liked' && (
-        <>
+        <View style={{ flex: 1 }}>
           <View style={styles.subTabRow}>
             <Chip label="루트" active={likedTab === 'routes'} onPress={() => switchLikedTab('routes')} />
             <Chip label="장소" active={likedTab === 'places'} onPress={() => switchLikedTab('places')} />
@@ -191,6 +220,7 @@ export default function MypageScreen() {
           {likedTab === 'routes' ? (
             likedRoutesLoading && likedRoutesPage === 1 ? <ActivityIndicator style={{ flex: 1 }} /> : (
               <FlatList
+                style={{ flex: 1 }}
                 data={allLikedRoutes}
                 keyExtractor={(i) => i.id}
                 contentContainerStyle={styles.list}
@@ -206,6 +236,7 @@ export default function MypageScreen() {
           ) : (
             likedPlacesLoading && likedPlacesPage === 1 ? <ActivityIndicator style={{ flex: 1 }} /> : (
               <FlatList
+                style={{ flex: 1 }}
                 data={allLikedPlaces}
                 keyExtractor={(i) => i.id}
                 contentContainerStyle={styles.list}
@@ -219,11 +250,12 @@ export default function MypageScreen() {
               />
             )
           )}
-        </>
+        </View>
       )}
 
       {tab === 'social' && (
         <FlatList
+          style={{ flex: 1 }}
           data={[]}
           keyExtractor={() => ''}
           ListHeaderComponent={

@@ -12,7 +12,7 @@ import {
   updateComment, setRepresentative,
 } from '@/services/routes';
 import { toggleLike } from '@/services/likes';
-import { openInMap } from '@/utils/maps';
+import { getErrorMessage } from '@/lib/errors';
 import KakaoMap from '@/components/KakaoMap';
 import { userAtom } from '@/store/auth';
 import { PURPOSE_LABELS, STOP_LABELS } from '@/types';
@@ -41,7 +41,6 @@ function StopItem({ stop }: { stop: RoutePlace }) {
           <Text style={styles.stopLabel}>{STOP_LABELS[stop.label]}</Text>
         </View>
         {stop.place.address ? <Text style={styles.stopAddress}>{stop.place.address}</Text> : null}
-        <Button variant="outline" small label="지도에서 보기" onPress={() => openInMap(stop.place.name, stop.place.latitude, stop.place.longitude)} style={styles.mapBtn} />
         {hasAlts && (
           <TouchableOpacity style={styles.altToggle} onPress={() => setExpanded((v) => !v)}>
             <Text style={styles.altToggleText}>대안 장소 {stop.alternatives.length}개 {expanded ? '▲' : '▼'}</Text>
@@ -118,31 +117,31 @@ export default function RouteDetailScreen() {
       setAllComments([]);
       queryClient.invalidateQueries({ queryKey: ['comments', id] });
     },
-    onError: () => Alert.alert('오류', '댓글을 등록하지 못했습니다.'),
+    onError: (error) => Alert.alert('오류', getErrorMessage(error, '댓글을 등록하지 못했습니다.')),
   });
 
   const updateCommentMutation = useMutation({
     mutationFn: ({ commentId, content }: { commentId: string; content: string }) => updateComment(id, commentId, content),
     onSuccess: () => { setEditingComment(null); queryClient.invalidateQueries({ queryKey: ['comments', id] }); },
-    onError: () => Alert.alert('오류', '댓글 수정에 실패했습니다.'),
+    onError: (error) => Alert.alert('오류', getErrorMessage(error, '댓글 수정에 실패했습니다.')),
   });
 
   const deleteCommentMutation = useMutation({
     mutationFn: (commentId: string) => deleteComment(id, commentId),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['comments', id] }),
-    onError: () => Alert.alert('오류', '댓글 삭제에 실패했습니다.'),
+    onError: (error) => Alert.alert('오류', getErrorMessage(error, '댓글 삭제에 실패했습니다.')),
   });
 
   const deleteRouteMutation = useMutation({
     mutationFn: () => deleteRoute(id),
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['routes'] }); router.replace('/(tabs)'); },
-    onError: () => Alert.alert('오류', '루트 삭제에 실패했습니다.'),
+    onError: (error) => Alert.alert('오류', getErrorMessage(error, '루트 삭제에 실패했습니다.')),
   });
 
   const representativeMutation = useMutation({
     mutationFn: (val: boolean) => setRepresentative(id, val),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['route', id] }),
-    onError: () => Alert.alert('오류', '대표 루트 설정에 실패했습니다.'),
+    onError: (error) => Alert.alert('오류', getErrorMessage(error, '대표 루트 설정에 실패했습니다.')),
   });
 
   if (isLoading) return <ActivityIndicator style={{ flex: 1 }} size="large" />;
@@ -164,8 +163,8 @@ export default function RouteDetailScreen() {
       const res = await toggleLike(isLiked, { routeId: id });
       setLiked(res.liked);
       setLikeCount(res.count);
-    } catch {
-      Alert.alert('오류', '좋아요 처리에 실패했습니다.');
+    } catch (error) {
+      Alert.alert('오류', getErrorMessage(error, '좋아요 처리에 실패했습니다.'));
     }
   }
 
@@ -184,6 +183,7 @@ export default function RouteDetailScreen() {
   }
 
   function handleRepresentativeToggle() {
+    if (!route) return;
     const next = !route.isRepresentative;
     Alert.alert(next ? '대표 루트로 설정' : '대표 루트 해제', next ? '이 루트를 대표 루트로 설정하시겠습니까?' : '대표 루트를 해제하시겠습니까?', [
       { text: '취소', style: 'cancel' },
@@ -324,7 +324,6 @@ const styles = StyleSheet.create({
   stopName: { fontSize: font.lg, fontWeight: '600', flex: 1, color: colors.text.body },
   stopLabel: { fontSize: font.xs, color: colors.text.hint, backgroundColor: colors.bg.muted, paddingHorizontal: 6, paddingVertical: 2, borderRadius: radius.sm },
   stopAddress: { fontSize: font.md, color: colors.text.muted },
-  mapBtn: { alignSelf: 'flex-start', marginTop: 2 },
   altToggle: { marginTop: 6, alignSelf: 'flex-start' },
   altToggleText: { fontSize: font.sm, color: colors.text.muted, fontWeight: '500' },
   altList: { marginTop: 6, paddingLeft: 8, gap: 6 },
