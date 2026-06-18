@@ -8,3 +8,4 @@ export type AppUser = {
 };
 
 export const userAtom = atom<AppUser | null>(null);
+export const authReadyAtom = atom(false);

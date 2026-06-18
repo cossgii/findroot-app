@@ -1,11 +1,12 @@
-﻿import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+﻿import { memo } from 'react';
+import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Badge } from './ui';
 import { colors, font, radius } from '@/constants/theme';
 import { CATEGORY_LABELS } from '@/types';
 import type { Place } from '@/types';
 
-export function PlaceCard({ place }: { place: Place }) {
+export const PlaceCard = memo(function PlaceCard({ place }: { place: Place }) {
   const router = useRouter();
   return (
     <TouchableOpacity style={styles.card} onPress={() => router.push(`/places/${place.id}`)}>
@@ -17,7 +18,7 @@ export function PlaceCard({ place }: { place: Place }) {
       <Text style={styles.meta}>♡ {place.likesCount}</Text>
     </TouchableOpacity>
   );
-}
+});
 
 const styles = StyleSheet.create({
   card: {

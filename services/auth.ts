@@ -1,5 +1,6 @@
 ﻿import { api } from '@/lib/api';
 import { getStoredUser, setToken, setStoredUser, clearToken, clearStoredUser } from '@/lib/storage';
+import { registerPushToken, unregisterPushToken } from '@/services/notifications';
 import type { AppUser } from '@/store/auth';
 
 export { getStoredUser };
@@ -14,10 +15,12 @@ export async function login(loginId: string, password: string): Promise<AppUser>
     image: data.user.image ?? null,
   };
   await setStoredUser(user);
+  registerPushToken().catch((e) => console.error('[FCM]', e));
   return user;
 }
 
 export async function logout(): Promise<void> {
+  await unregisterPushToken();
   await clearToken();
   await clearStoredUser();
 }
