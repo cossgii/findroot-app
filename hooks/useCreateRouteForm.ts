@@ -15,7 +15,7 @@ export function useCreateRouteForm() {
 
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
-  const [purpose, setPurpose] = useState<RoutePurpose>('ENTIRE');
+  const [purpose, setPurpose] = useState<RoutePurpose>('FAMILY');
   const [districtId, setDistrictId] = useState('');
   const [stops, setStops] = useState<Stop[]>([]);
 

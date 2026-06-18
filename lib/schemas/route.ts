@@ -14,7 +14,7 @@ export const createRouteSchema = z.object({
     .array(routePlaceSchema)
     .min(2, { message: '경유지를 최소 2개 추가해주세요.' })
     .max(5, { message: '경유지는 최대 5개까지 추가할 수 있습니다.' }),
-  purpose: z.enum(['FAMILY', 'GATHERING', 'SOLO', 'COUPLE', 'ENTIRE']),
+  purpose: z.enum(['FAMILY', 'GATHERING', 'SOLO', 'COUPLE']),
 });
 
 export const updateRouteSchema = z.object({

@@ -1,6 +1,6 @@
 export type PlaceCategory = 'MEAL' | 'DRINK';
 export type RouteStopLabel = 'MEAL' | 'CAFE' | 'BAR';
-export type RoutePurpose = 'FAMILY' | 'GATHERING' | 'SOLO' | 'COUPLE' | 'ENTIRE';
+export type RoutePurpose = 'FAMILY' | 'GATHERING' | 'SOLO' | 'COUPLE';
 
 export type UserSummary = {
   id: string;
@@ -90,7 +90,6 @@ export const PURPOSE_LABELS: Record<RoutePurpose, string> = {
   GATHERING: '단체',
   SOLO: '혼자',
   COUPLE: '커플',
-  ENTIRE: '전체',
 };
 
 export const STOP_LABELS: Record<RouteStopLabel, string> = {

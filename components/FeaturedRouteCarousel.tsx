@@ -69,7 +69,7 @@ export default function FeaturedRouteCarousel({ districtId, purpose, creatorId }
         purpose,
         creatorId,
       }),
-    enabled: !!purpose,
+    enabled: true,
   });
 
   if (isLoading) {

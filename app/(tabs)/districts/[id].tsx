@@ -71,6 +71,7 @@ export default function DistrictScreen() {
   const [routeSort, setRouteSort] = useState<Sort>('recent');
   const [category, setCategory] = useState<PlaceCategory | undefined>(undefined);
   const [purpose, setPurpose] = useState<RoutePurpose | undefined>(undefined);
+  const [purposeReady, setPurposeReady] = useState(false);
   const [purposeModalVisible, setPurposeModalVisible] = useState(false);
 
   const [placePage, setPlacePage] = useState(1);
@@ -138,7 +139,7 @@ export default function DistrictScreen() {
       page: routePage,
       targetUserId,
     }),
-    enabled: mode === 'routes' && !!purpose,
+    enabled: mode === 'routes' && purposeReady,
   });
 
   useEffect(() => {
@@ -182,11 +183,12 @@ export default function DistrictScreen() {
       return;
     }
     setMode('routes');
-    if (!purpose) setPurposeModalVisible(true);
+    if (!purposeReady) setPurposeModalVisible(true);
   }
 
-  function handlePurposeSelect(p: RoutePurpose) {
-    setPurpose(p);
+  function handlePurposeSelect(p: RoutePurpose | 'ALL') {
+    setPurpose(p === 'ALL' ? undefined : p);
+    setPurposeReady(true);
     setPurposeModalVisible(false);
     resetRoutes();
   }
@@ -250,14 +252,14 @@ export default function DistrictScreen() {
           </TouchableOpacity>
         </View>
       )}
-      {mode === 'routes' && !!purpose && (
+      {mode === 'routes' && purposeReady && (
         <FeaturedRouteCarousel districtId={id} purpose={purpose} creatorId={targetUserId} />
       )}
 
       <View style={styles.toggle}>
         <TouchableOpacity
           style={[styles.toggleBtn, mode === 'places' && styles.toggleActive]}
-          onPress={() => { setMode('places'); setPurpose(undefined); }}
+          onPress={() => { setMode('places'); setPurpose(undefined); setPurposeReady(false); }}
         >
           <Text style={[styles.toggleText, mode === 'places' && styles.toggleTextActive]}>장소</Text>
         </TouchableOpacity>
@@ -302,7 +304,7 @@ export default function DistrictScreen() {
             <Chip label="인기순" active={routeSort === 'likes'} onPress={() => { setRouteSort('likes'); resetRoutes(); }} style={styles.chip} />
           </ScrollView>
           <TouchableOpacity style={styles.purposeChange} onPress={() => setPurposeModalVisible(true)}>
-            <Text style={styles.purposeChangeText}>{purpose ? PURPOSE_LABELS[purpose] : '목적'} ▾</Text>
+            <Text style={styles.purposeChangeText}>{purposeReady ? (purpose ? PURPOSE_LABELS[purpose] : '전체') : '목적'} ▾</Text>
           </TouchableOpacity>
         </View>
       )}
@@ -383,15 +385,21 @@ export default function DistrictScreen() {
         visible={purposeModalVisible}
         transparent
         animationType="slide"
-        onRequestClose={() => { setPurposeModalVisible(false); if (!purpose) setMode('places'); }}
+        onRequestClose={() => { setPurposeModalVisible(false); if (!purposeReady) setMode('places'); }}
       >
         <TouchableOpacity
           style={styles.modalOverlay}
           activeOpacity={1}
-          onPress={() => { setPurposeModalVisible(false); if (!purpose) setMode('places'); }}
+          onPress={() => { setPurposeModalVisible(false); if (!purposeReady) setMode('places'); }}
         >
           <View style={styles.modalSheet}>
             <Text style={styles.modalTitle}>어떤 목적으로 탐색하시나요?</Text>
+            <TouchableOpacity
+              style={[styles.purposeItem, purposeReady && !purpose && styles.purposeItemActive]}
+              onPress={() => handlePurposeSelect('ALL')}
+            >
+              <Text style={[styles.purposeItemText, purposeReady && !purpose && styles.purposeItemTextActive]}>전체</Text>
+            </TouchableOpacity>
             {ALL_PURPOSES.map((p) => (
               <TouchableOpacity
                 key={p}

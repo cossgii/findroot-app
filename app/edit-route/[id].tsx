@@ -81,7 +81,7 @@ export default function EditRouteScreen() {
   const queryClient = useQueryClient();
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
-  const [purpose, setPurpose] = useState<RoutePurpose>('ENTIRE');
+  const [purpose, setPurpose] = useState<RoutePurpose>('FAMILY');
   const [stops, setStops] = useState<Stop[]>([]);
   const [showPicker, setShowPicker] = useState(false);
   const [pendingPlace, setPendingPlace] = useState<Place | null>(null);
