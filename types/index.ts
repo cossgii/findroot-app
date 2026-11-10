@@ -87,8 +87,8 @@ export type PagedResult<T> = {
 
 export const PURPOSE_LABELS: Record<RoutePurpose, string> = {
   FAMILY: '가족',
-  GATHERING: '단체',
-  SOLO: '혼자',
+  GATHERING: '모임',
+  SOLO: '나홀로',
   COUPLE: '커플',
 };
 
