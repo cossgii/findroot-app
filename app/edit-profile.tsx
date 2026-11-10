@@ -58,8 +58,8 @@ export default function EditProfileScreen() {
     onSuccess: async (updated) => {
       queryClient.invalidateQueries({ queryKey: ['me'] });
       const stored = await getStoredUser();
-      if (stored) await setStoredUser({ ...stored, name: updated.name });
-      setUser((prev) => prev ? { ...prev, name: updated.name } : prev);
+      if (stored) await setStoredUser({ ...stored, name: updated.name, image: updated.image ?? stored.image });
+      setUser((prev) => prev ? { ...prev, name: updated.name, image: updated.image ?? prev.image } : prev);
       setImageUri(null);
       Alert.alert('완료', '프로필이 변경됐습니다.');
     },
