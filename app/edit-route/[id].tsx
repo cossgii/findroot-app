@@ -1,4 +1,4 @@
-﻿import { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity, StyleSheet, Alert,
   ScrollView, FlatList, KeyboardAvoidingView, Platform, ActivityIndicator, Modal,
@@ -11,6 +11,7 @@ import { createAlternative, deleteAlternative } from '@/services/alternatives';
 import { searchPlaces } from '@/services/places';
 import { updateRouteSchema } from '@/lib/schemas/route';
 import { getErrorMessage } from '@/lib/errors';
+import { invalidateRouteLists } from '@/lib/invalidate';
 import { SEOUL_DISTRICTS } from '@/constants/districts';
 import { PURPOSE_LABELS, STOP_LABELS, CATEGORY_LABELS } from '@/types';
 import type { RoutePurpose, RouteStopLabel, Place, Alternative } from '@/types';
@@ -123,17 +124,29 @@ export default function EditRouteScreen() {
     enabled: !!altPicker && !altPendingPlace,
   });
 
+  // 서버는 places를 받으면 경유지를 지우고 다시 만들어서 예비 장소까지 삭제되므로, 경유지가 바뀐 경우에만 보낸다
+  function hasStopsChanged() {
+    if (!route) return true;
+    const original = [...route.places].sort((a, b) => a.order - b.order);
+    return (
+      original.length !== stops.length ||
+      original.some((rp, i) => rp.placeId !== stops[i].place.id || rp.label !== stops[i].label)
+    );
+  }
+
   const mutation = useMutation({
     mutationFn: () =>
       updateRoute(id, {
         name: name.trim(),
         description: description.trim() || undefined,
         purpose,
-        places: stops.map((s, i) => ({ placeId: s.place.id, order: i + 1, label: s.label })),
+        places: hasStopsChanged()
+          ? stops.map((s, i) => ({ placeId: s.place.id, order: i + 1, label: s.label }))
+          : undefined,
       }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['route', id] });
-      queryClient.invalidateQueries({ queryKey: ['routes'] });
+      invalidateRouteLists(queryClient);
       Alert.alert('완료', '루트가 수정됐습니다.', [
         { text: '확인', onPress: () => router.replace(`/routes/${id}`) },
       ]);
@@ -216,6 +229,7 @@ export default function EditRouteScreen() {
 
   function submitAlt() {
     if (!altPicker || !altPendingPlace) return;
+    if (!altExplanation.trim()) { Alert.alert('오류', '예비 장소 설명을 입력해주세요.'); return; }
     addAltMutation.mutate({
       routePlaceId: altPicker.routePlaceId,
       placeId: altPendingPlace.id,
@@ -226,7 +240,7 @@ export default function EditRouteScreen() {
   if (isLoading || !initialized) return <ActivityIndicator style={{ flex: 1 }} size="large" />;
 
   return (
-    <SafeAreaView style={{ flex: 1 }} edges={['top']}>
+    <SafeAreaView style={{ flex: 1 }} edges={['top', 'bottom']}>
     <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
         <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
@@ -368,7 +382,7 @@ export default function EditRouteScreen() {
             )
           ) : (
             <View style={styles.labelPicker}>
-              <Text style={styles.labelPickerTitle}>"{altPendingPlace.name}" 예비 설명 (선택)</Text>
+              <Text style={styles.labelPickerTitle}>"{altPendingPlace.name}" 예비 설명 *</Text>
               <TextInput
                 style={[styles.input, styles.multiline]}
                 value={altExplanation}

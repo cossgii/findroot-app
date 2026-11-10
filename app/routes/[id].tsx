@@ -13,6 +13,7 @@ import {
 } from '@/services/routes';
 import { toggleLike } from '@/services/likes';
 import { getErrorMessage } from '@/lib/errors';
+import { invalidateRouteLists } from '@/lib/invalidate';
 import KakaoMap from '@/components/KakaoMap';
 import { userAtom } from '@/store/auth';
 import { PURPOSE_LABELS, STOP_LABELS } from '@/types';
@@ -109,32 +110,37 @@ export default function RouteDetailScreen() {
     }
   }, [comments]);
 
+  // 댓글이 바뀌면 이어 붙인 목록을 버리고 첫 페이지부터 다시 불러온다
+  function resetComments() {
+    setCommentPage(1);
+    setAllComments([]);
+    queryClient.invalidateQueries({ queryKey: ['comments', id] });
+  }
+
   const commentMutation = useMutation({
     mutationFn: (content: string) => postComment(id, content),
     onSuccess: () => {
       setCommentText('');
-      setCommentPage(1);
-      setAllComments([]);
-      queryClient.invalidateQueries({ queryKey: ['comments', id] });
+      resetComments();
     },
     onError: (error) => Alert.alert('오류', getErrorMessage(error, '댓글을 등록하지 못했습니다.')),
   });
 
   const updateCommentMutation = useMutation({
     mutationFn: ({ commentId, content }: { commentId: string; content: string }) => updateComment(id, commentId, content),
-    onSuccess: () => { setEditingComment(null); queryClient.invalidateQueries({ queryKey: ['comments', id] }); },
+    onSuccess: () => { setEditingComment(null); resetComments(); },
     onError: (error) => Alert.alert('오류', getErrorMessage(error, '댓글 수정에 실패했습니다.')),
   });
 
   const deleteCommentMutation = useMutation({
     mutationFn: (commentId: string) => deleteComment(id, commentId),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['comments', id] }),
+    onSuccess: () => resetComments(),
     onError: (error) => Alert.alert('오류', getErrorMessage(error, '댓글 삭제에 실패했습니다.')),
   });
 
   const deleteRouteMutation = useMutation({
     mutationFn: () => deleteRoute(id),
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['routes'] }); router.replace('/(tabs)'); },
+    onSuccess: () => { invalidateRouteLists(queryClient); router.replace('/(tabs)'); },
     onError: (error) => Alert.alert('오류', getErrorMessage(error, '루트 삭제에 실패했습니다.')),
   });
 
@@ -197,7 +203,7 @@ export default function RouteDetailScreen() {
   const mapStops = sortedPlaces.filter((s) => s.place.latitude && s.place.longitude);
 
   return (
-    <SafeAreaView style={{ flex: 1 }} edges={['top']}>
+    <SafeAreaView style={{ flex: 1 }} edges={['top', 'bottom']}>
     <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <View style={{ flex: 1 }}>
         {hasMapData && (

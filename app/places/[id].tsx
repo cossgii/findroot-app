@@ -7,6 +7,7 @@ import { useAtomValue } from 'jotai';
 import { fetchPlace, deletePlace } from '@/services/places';
 import { toggleLike } from '@/services/likes';
 import { getErrorMessage } from '@/lib/errors';
+import { invalidatePlaceLists } from '@/lib/invalidate';
 import { userAtom } from '@/store/auth';
 import { CATEGORY_LABELS } from '@/types';
 import { Badge, Button, LikeButton, TopBar } from '@/components/ui';
@@ -36,7 +37,7 @@ export default function PlaceDetailScreen() {
   const deleteMutation = useMutation({
     mutationFn: () => deletePlace(id),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['places'] });
+      invalidatePlaceLists(queryClient);
       router.back();
     },
     onError: (error) => Alert.alert('오류', getErrorMessage(error, '장소 삭제에 실패했습니다.')),
@@ -74,7 +75,7 @@ export default function PlaceDetailScreen() {
   }
 
   return (
-    <SafeAreaView style={{ flex: 1 }} edges={['top']}>
+    <SafeAreaView style={{ flex: 1 }} edges={['top', 'bottom']}>
     <ScrollView style={styles.container}>
       <TopBar
         right={isOwner ? (

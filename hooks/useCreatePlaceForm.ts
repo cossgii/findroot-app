@@ -5,6 +5,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { createPlace, checkPlaceExists } from '@/services/places';
 import { createPlaceSchema } from '@/lib/schemas/place';
 import { getErrorMessage } from '@/lib/errors';
+import { invalidatePlaceLists } from '@/lib/invalidate';
 import type { KakaoPlaceResult } from './useKakaoPlaceSearch';
 import type { PlaceCategory } from '@/types';
 
@@ -81,10 +82,7 @@ export function useCreatePlaceForm() {
     setLoading(true);
     try {
       await createPlace(result.data);
-      await queryClient.invalidateQueries({ queryKey: ['place-locations'] });
-      await queryClient.invalidateQueries({ queryKey: ['district-places'] });
-      await queryClient.invalidateQueries({ queryKey: ['my-places'] });
-      await queryClient.invalidateQueries({ queryKey: ['user-places'] });
+      await invalidatePlaceLists(queryClient);
       Alert.alert('완료', '장소가 등록됐습니다.', [
         { text: '확인', onPress: () => router.back() },
       ]);

@@ -5,6 +5,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { createRoute } from '@/services/routes';
 import { createRouteSchema } from '@/lib/schemas/route';
 import { getErrorMessage } from '@/lib/errors';
+import { invalidateRouteLists } from '@/lib/invalidate';
 import type { RoutePurpose, RouteStopLabel, Place } from '@/types';
 
 export type Stop = { place: Place; label: RouteStopLabel };
@@ -15,14 +16,14 @@ export function useCreateRouteForm() {
 
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
-  const [purpose, setPurpose] = useState<RoutePurpose>('FAMILY');
+  const [purpose, setPurpose] = useState<RoutePurpose | null>(null);
   const [districtId, setDistrictId] = useState('');
   const [stops, setStops] = useState<Stop[]>([]);
 
   const mutation = useMutation({
     mutationFn: createRoute,
     onSuccess: (route) => {
-      queryClient.invalidateQueries({ queryKey: ['routes', 'featured'] });
+      invalidateRouteLists(queryClient);
       Alert.alert('완료', '루트가 생성됐습니다.', [
         { text: '루트 보기', onPress: () => router.replace(`/routes/${route.id}`) },
       ]);
