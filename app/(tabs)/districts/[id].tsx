@@ -214,7 +214,8 @@ export default function DistrictScreen() {
       }
       const pos = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
       const nearestId = findNearestDistrict(pos.coords.latitude, pos.coords.longitude);
-      router.replace(`/districts/${nearestId}`);
+      if (isAll) router.push(`/districts/${nearestId}`);
+      else router.replace(`/districts/${nearestId}`);
     } catch {
       Alert.alert('오류', '위치를 가져오지 못했습니다.');
     } finally {
