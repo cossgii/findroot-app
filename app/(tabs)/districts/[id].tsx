@@ -22,6 +22,7 @@ import type { PlaceCategory, RoutePurpose, Place, Route, UserSummary } from '@/t
 
 type Mode = 'places' | 'routes';
 type Sort = 'recent' | 'likes';
+type PurposeSelection = RoutePurpose | 'ALL';
 
 type ContentCreator =
   | { type: 'recommended' }
@@ -70,8 +71,7 @@ export default function DistrictScreen() {
   const [placeSort, setPlaceSort] = useState<Sort>('recent');
   const [routeSort, setRouteSort] = useState<Sort>('recent');
   const [category, setCategory] = useState<PlaceCategory | undefined>(undefined);
-  const [purpose, setPurpose] = useState<RoutePurpose | undefined>(undefined);
-  const [purposeReady, setPurposeReady] = useState(false);
+  const [purposeSelection, setPurposeSelection] = useState<PurposeSelection | null>(null);
   const [purposeModalVisible, setPurposeModalVisible] = useState(false);
 
   const [placePage, setPlacePage] = useState(1);
@@ -99,6 +99,9 @@ export default function DistrictScreen() {
     creator.type === 'me' ? user?.id :
     undefined;
 
+  const purposeForApi = purposeSelection === 'ALL' || purposeSelection === null ? undefined : purposeSelection;
+  const purposeLabel = purposeSelection === null ? '목적' : purposeSelection === 'ALL' ? '전체' : PURPOSE_LABELS[purposeSelection];
+
   const { data: followingData } = useQuery({
     queryKey: ['following'],
     queryFn: () => fetchFollowing(),
@@ -112,11 +115,14 @@ export default function DistrictScreen() {
     enabled: debouncedSearch.length > 0,
   });
 
-  const { data: placeLocations = [] } = useQuery({
+  const { data: rawPlaceLocations = [] } = useQuery({
     queryKey: ['place-locations', id, targetUserId],
     queryFn: () => fetchPlaceLocations(isAll ? '전체' : districtName, targetUserId),
     enabled: mode === 'places',
   });
+  const placeLocations = category
+    ? rawPlaceLocations.filter((p: any) => p.category === category)
+    : rawPlaceLocations;
 
   const { data: placesData, isLoading: placesLoading } = useQuery({
     queryKey: ['district-places', id, placeSort, category, placePage, targetUserId],
@@ -131,15 +137,15 @@ export default function DistrictScreen() {
   });
 
   const { data: routesData, isLoading: routesLoading } = useQuery({
-    queryKey: ['district-routes', id, routeSort, purpose, routePage, targetUserId],
+    queryKey: ['district-routes', id, routeSort, purposeForApi, routePage, targetUserId],
     queryFn: () => fetchDistrictRoutes({
       districtId: isAll ? undefined : id,
       sort: routeSort,
-      purpose,
+      purpose: purposeForApi,
       page: routePage,
       targetUserId,
     }),
-    enabled: mode === 'routes' && purposeReady,
+    enabled: mode === 'routes' && purposeSelection !== null,
   });
 
   useEffect(() => {
@@ -183,12 +189,11 @@ export default function DistrictScreen() {
       return;
     }
     setMode('routes');
-    if (!purposeReady) setPurposeModalVisible(true);
+    if (!purposeSelection) setPurposeModalVisible(true);
   }
 
-  function handlePurposeSelect(p: RoutePurpose | 'ALL') {
-    setPurpose(p === 'ALL' ? undefined : p);
-    setPurposeReady(true);
+  function handlePurposeSelect(p: PurposeSelection) {
+    setPurposeSelection(p);
     setPurposeModalVisible(false);
     resetRoutes();
   }
@@ -209,7 +214,7 @@ export default function DistrictScreen() {
       }
       const pos = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
       const nearestId = findNearestDistrict(pos.coords.latitude, pos.coords.longitude);
-      router.push(`/districts/${nearestId}`);
+      router.replace(`/districts/${nearestId}`);
     } catch {
       Alert.alert('오류', '위치를 가져오지 못했습니다.');
     } finally {
@@ -247,19 +252,19 @@ export default function DistrictScreen() {
           >
             {gpsLoading
               ? <ActivityIndicator size="small" color={colors.primary} />
-              : <Text style={styles.gpsBtnText}>📍 내 위치</Text>
+              : <Text style={styles.gpsBtnText}>내 위치</Text>
             }
           </TouchableOpacity>
         </View>
       )}
-      {mode === 'routes' && purposeReady && (
-        <FeaturedRouteCarousel districtId={id} purpose={purpose} creatorId={targetUserId} />
+      {mode === 'routes' && purposeSelection !== null && (
+        <FeaturedRouteCarousel districtId={id} purpose={purposeForApi} creatorId={targetUserId} />
       )}
 
       <View style={styles.toggle}>
         <TouchableOpacity
           style={[styles.toggleBtn, mode === 'places' && styles.toggleActive]}
-          onPress={() => { setMode('places'); setPurpose(undefined); setPurposeReady(false); }}
+          onPress={() => { setMode('places'); setPurposeSelection(null); }}
         >
           <Text style={[styles.toggleText, mode === 'places' && styles.toggleTextActive]}>장소</Text>
         </TouchableOpacity>
@@ -271,43 +276,44 @@ export default function DistrictScreen() {
         </TouchableOpacity>
       </View>
 
-      <View style={styles.creatorRow}>
-        <TouchableOpacity
-          style={[styles.creatorChip, creator.type !== 'recommended' && styles.creatorChipActive]}
-          onPress={() => user ? setShowCreatorPanel(true) : Alert.alert('로그인 필요', '로그인 후 이용하세요.')}
-        >
-          {creator.type === 'user' && (
-            <UserAvatar name={creator.userName} image={creator.userImage} size={18} />
-          )}
-          <Text style={[styles.creatorChipText, creator.type !== 'recommended' && styles.creatorChipTextActive]}>
-            {creatorLabel()}
-          </Text>
-          <Text style={styles.creatorChipArrow}>▾</Text>
-        </TouchableOpacity>
-      </View>
-
-      {mode === 'places' && (
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filterRow}>
-          <Chip label="최신순" active={placeSort === 'recent'} onPress={() => { setPlaceSort('recent'); resetPlaces(); }} style={styles.chip} />
-          <Chip label="인기순" active={placeSort === 'likes'} onPress={() => { setPlaceSort('likes'); resetPlaces(); }} style={styles.chip} />
-          <Chip label="전체" active={category === undefined} onPress={() => { setCategory(undefined); resetPlaces(); }} style={styles.chip} />
-          {(['MEAL', 'DRINK'] as PlaceCategory[]).map((c) => (
-            <Chip key={c} label={CATEGORY_LABELS[c]} active={category === c} onPress={() => { setCategory(c); resetPlaces(); }} style={styles.chip} />
-          ))}
-        </ScrollView>
-      )}
-
-      {mode === 'routes' && (
-        <View style={styles.routeFilterRow}>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-            <Chip label="최신순" active={routeSort === 'recent'} onPress={() => { setRouteSort('recent'); resetRoutes(); }} style={styles.chip} />
-            <Chip label="인기순" active={routeSort === 'likes'} onPress={() => { setRouteSort('likes'); resetRoutes(); }} style={styles.chip} />
+      <View style={styles.filterBar}>
+        {mode === 'places' ? (
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filterChips}>
+            <Chip label="전체" active={category === undefined} onPress={() => { setCategory(undefined); resetPlaces(); }} style={styles.chip} />
+            {(['MEAL', 'DRINK'] as PlaceCategory[]).map((c) => (
+              <Chip key={c} label={CATEGORY_LABELS[c]} active={category === c} onPress={() => { setCategory(c); resetPlaces(); }} style={styles.chip} />
+            ))}
           </ScrollView>
-          <TouchableOpacity style={styles.purposeChange} onPress={() => setPurposeModalVisible(true)}>
-            <Text style={styles.purposeChangeText}>{purposeReady ? (purpose ? PURPOSE_LABELS[purpose] : '전체') : '목적'} ▾</Text>
+        ) : (
+          <TouchableOpacity style={styles.dropdownBtn} onPress={() => setPurposeModalVisible(true)}>
+            <Text style={styles.dropdownBtnText}>{purposeLabel} ▾</Text>
+          </TouchableOpacity>
+        )}
+
+        <View style={styles.filterRight}>
+          <TouchableOpacity
+            style={styles.dropdownBtn}
+            onPress={() => {
+              if (mode === 'places') { setPlaceSort((s) => s === 'recent' ? 'likes' : 'recent'); resetPlaces(); }
+              else { setRouteSort((s) => s === 'recent' ? 'likes' : 'recent'); resetRoutes(); }
+            }}
+          >
+            <Text style={styles.dropdownBtnText}>
+              {(mode === 'places' ? placeSort : routeSort) === 'recent' ? '최신순' : '인기순'} ↕
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.creatorChip, creator.type !== 'recommended' && styles.creatorChipActive]}
+            onPress={() => user ? setShowCreatorPanel(true) : Alert.alert('로그인 필요', '로그인 후 이용하세요.')}
+          >
+            {creator.type === 'user' && <UserAvatar name={creator.userName} image={creator.userImage} size={18} />}
+            <Text style={[styles.creatorChipText, creator.type !== 'recommended' && styles.creatorChipTextActive]}>
+              {creatorLabel()}
+            </Text>
+            <Text style={styles.creatorChipArrow}>▾</Text>
           </TouchableOpacity>
         </View>
-      )}
+      </View>
 
       <View style={{ flex: 1 }}>
         {mode === 'places' ? (
@@ -327,7 +333,7 @@ export default function DistrictScreen() {
             />
           )
         ) : (
-          !purpose ? null :
+          !purposeSelection ? null :
           routesLoading && routePage === 1 ? <ActivityIndicator style={{ flex: 1 }} size="large" /> : (
             <FlatList
               style={{ flex: 1 }}
@@ -385,28 +391,28 @@ export default function DistrictScreen() {
         visible={purposeModalVisible}
         transparent
         animationType="slide"
-        onRequestClose={() => { setPurposeModalVisible(false); if (!purposeReady) setMode('places'); }}
+        onRequestClose={() => { setPurposeModalVisible(false); if (!purposeSelection) setMode('places'); }}
       >
         <TouchableOpacity
           style={styles.modalOverlay}
           activeOpacity={1}
-          onPress={() => { setPurposeModalVisible(false); if (!purposeReady) setMode('places'); }}
+          onPress={() => { setPurposeModalVisible(false); if (!purposeSelection) setMode('places'); }}
         >
           <View style={styles.modalSheet}>
             <Text style={styles.modalTitle}>어떤 목적으로 탐색하시나요?</Text>
             <TouchableOpacity
-              style={[styles.purposeItem, purposeReady && !purpose && styles.purposeItemActive]}
+              style={[styles.purposeItem, purposeSelection === 'ALL' && styles.purposeItemActive]}
               onPress={() => handlePurposeSelect('ALL')}
             >
-              <Text style={[styles.purposeItemText, purposeReady && !purpose && styles.purposeItemTextActive]}>전체</Text>
+              <Text style={[styles.purposeItemText, purposeSelection === 'ALL' && styles.purposeItemTextActive]}>전체</Text>
             </TouchableOpacity>
             {ALL_PURPOSES.map((p) => (
               <TouchableOpacity
                 key={p}
-                style={[styles.purposeItem, purpose === p && styles.purposeItemActive]}
+                style={[styles.purposeItem, purposeSelection === p && styles.purposeItemActive]}
                 onPress={() => handlePurposeSelect(p)}
               >
-                <Text style={[styles.purposeItemText, purpose === p && styles.purposeItemTextActive]}>
+                <Text style={[styles.purposeItemText, purposeSelection === p && styles.purposeItemTextActive]}>
                   {PURPOSE_LABELS[p]}
                 </Text>
               </TouchableOpacity>
@@ -484,6 +490,17 @@ export default function DistrictScreen() {
                   >
                     <UserAvatar name={item.name ?? '?'} image={item.image} size={36} />
                     <Text style={styles.userItemName}>{item.name ?? '사용자'}</Text>
+                    <TouchableOpacity
+                      style={styles.filterSelectBtn}
+                      onPress={() => {
+                        setShowCreatorPanel(false);
+                        setDebouncedSearch('');
+                        searchInputRef.current?.clear();
+                        router.push(`/users/${item.id}`);
+                      }}
+                    >
+                      <Text style={styles.filterSelectBtnText}>프로필</Text>
+                    </TouchableOpacity>
                   </TouchableOpacity>
                 )}
               />
@@ -525,29 +542,24 @@ const styles = StyleSheet.create({
   toggleActive: { backgroundColor: colors.primary },
   toggleText: { fontSize: font.base, fontWeight: '600', color: colors.text.secondary },
   toggleTextActive: { color: '#fff' },
-
-  creatorRow: { paddingHorizontal: spacing.lg, marginBottom: spacing.sm },
+  filterBar: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: spacing.md, paddingVertical: spacing.sm, gap: 6 },
+  filterChips: { flexDirection: 'row', gap: 6 },
+  filterRight: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  dropdownBtn: { borderWidth: 1, borderColor: colors.border, borderRadius: radius.pill, paddingHorizontal: 10, paddingVertical: 6, backgroundColor: colors.bg.white },
+  dropdownBtnText: { fontSize: font.sm, fontWeight: '600', color: colors.text.secondary },
+  chip: { marginRight: 0 },
   creatorChip: {
-    flexDirection: 'row', alignItems: 'center', gap: 6,
-    alignSelf: 'flex-start',
+    flexDirection: 'row', alignItems: 'center', gap: 4,
     borderWidth: 1, borderColor: colors.border,
-    borderRadius: radius.pill, paddingHorizontal: 12, paddingVertical: 6,
+    borderRadius: radius.pill, paddingHorizontal: 10, paddingVertical: 6,
     backgroundColor: colors.bg.white,
   },
   creatorChipActive: { borderColor: colors.primary, backgroundColor: colors.primary + '10' },
   creatorChipText: { fontSize: font.sm, fontWeight: '600', color: colors.text.secondary },
   creatorChipTextActive: { color: colors.primary },
   creatorChipArrow: { fontSize: 10, color: colors.text.hint },
-
-  filterRow: { paddingHorizontal: spacing.md, paddingVertical: spacing.sm, flexGrow: 0 },
-  chip: { marginRight: 6 },
-  routeFilterRow: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: spacing.md, paddingVertical: spacing.sm },
-  purposeChange: { marginLeft: spacing.sm },
-  purposeChangeText: { fontSize: font.sm, color: colors.primary, fontWeight: '600' },
-
   list: { gap: 10, paddingBottom: spacing.lg },
   footerLoader: { marginVertical: 16 },
-
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'flex-end' },
   modalSheet: { backgroundColor: '#fff', borderTopLeftRadius: radius.lg * 2, borderTopRightRadius: radius.lg * 2, padding: spacing.xl, paddingBottom: 40 },
   creatorSheet: { maxHeight: '75%' },
@@ -556,19 +568,21 @@ const styles = StyleSheet.create({
   purposeItemActive: { backgroundColor: colors.primary },
   purposeItemText: { fontSize: font.lg, fontWeight: '600', color: colors.text.body, textAlign: 'center' },
   purposeItemTextActive: { color: '#fff' },
-
   creatorQuickRow: { flexDirection: 'row', gap: spacing.md, marginBottom: spacing.lg },
   creatorQuickBtn: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, paddingVertical: 10, borderRadius: radius.md, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.bg.white },
   creatorQuickActive: { borderColor: colors.primary, backgroundColor: colors.primary + '15' },
   creatorQuickIcon: { fontSize: 16 },
   creatorQuickText: { fontSize: font.base, fontWeight: '600', color: colors.text.secondary },
   creatorQuickTextActive: { color: colors.primary },
-
   searchInput: { borderWidth: 1, borderColor: colors.border, borderRadius: radius.md, paddingHorizontal: spacing.md, paddingVertical: 10, fontSize: font.base, color: colors.text.primary, marginBottom: spacing.md },
   panelSectionTitle: { fontSize: font.sm, fontWeight: '600', color: colors.text.hint, marginBottom: spacing.sm },
   panelEmpty: { textAlign: 'center', color: colors.text.muted, marginTop: spacing.lg, fontSize: font.sm },
   userList: { flexGrow: 0, maxHeight: 220 },
   userItem: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, paddingVertical: 10, paddingHorizontal: spacing.sm, borderRadius: radius.md },
   userItemActive: { backgroundColor: colors.primary + '15' },
-  userItemName: { fontSize: font.base, fontWeight: '500', color: colors.text.primary },
+  userItemName: { flex: 1, fontSize: font.base, fontWeight: '500', color: colors.text.primary },
+  filterSelectBtn: { borderWidth: 1, borderColor: colors.border, borderRadius: radius.pill, paddingHorizontal: 10, paddingVertical: 4 },
+  filterSelectBtnActive: { borderColor: colors.primary, backgroundColor: colors.primary },
+  filterSelectBtnText: { fontSize: font.xs, fontWeight: '600', color: colors.text.secondary },
+  filterSelectBtnTextActive: { color: '#fff' },
 });

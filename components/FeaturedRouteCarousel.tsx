@@ -54,7 +54,7 @@ function RouteCarouselCard({ route }: { route: Route }) {
       </View>
       <View style={styles.cardFooter}>
         <Text style={styles.cardMeta}>💬 {route.commentsCount}</Text>
-        <LikeButton liked={liked} count={count} onPress={handleLike} />
+        <LikeButton liked={liked} count={count} onPress={handleLike} small />
       </View>
     </TouchableOpacity>
   );
