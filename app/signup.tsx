@@ -44,7 +44,7 @@ export default function SignupScreen() {
       <Input placeholder="비밀번호 (8-15자, 영문+숫자+특수문자)" value={form.password} onChangeText={set('password')} secureTextEntry style={styles.mb} />
       <Input placeholder="비밀번호 확인" value={form.confirmPassword} onChangeText={set('confirmPassword')} secureTextEntry style={styles.mb} />
       <Button label="가입하기" onPress={handleSignup} loading={loading} />
-      <TouchableOpacity onPress={() => router.back()} style={styles.link}>
+      <TouchableOpacity onPress={() => router.replace('/login')} style={styles.link}>
         <Text style={styles.linkText}>이미 계정이 있으신가요? 로그인</Text>
       </TouchableOpacity>
       {router.canGoBack() && (
