@@ -140,7 +140,7 @@ export default function RouteDetailScreen() {
 
   const deleteRouteMutation = useMutation({
     mutationFn: () => deleteRoute(id),
-    onSuccess: () => { invalidateRouteLists(queryClient); router.replace('/(tabs)'); },
+    onSuccess: () => { invalidateRouteLists(queryClient); router.replace('/districts/all'); },
     onError: (error) => Alert.alert('오류', getErrorMessage(error, '루트 삭제에 실패했습니다.')),
   });
 

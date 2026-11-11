@@ -21,7 +21,7 @@ export default function LoginScreen() {
     try {
       const user = await login(loginId, password);
       setUser(user);
-      router.replace('/(tabs)');
+      router.replace('/districts/all');
     } catch (error) {
       Alert.alert('로그인 실패', getErrorMessage(error, '로그인에 실패했습니다.'));
     } finally {

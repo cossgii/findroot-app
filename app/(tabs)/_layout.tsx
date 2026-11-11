@@ -18,8 +18,7 @@ export default function TabLayout() {
           title: '마이페이지',
           tabBarIcon: ({ color, size }) => <Ionicons name="person-outline" size={size} color={color} />,
         }}
-      />
-      <Tabs.Screen name="index" options={{ href: null }} />
+      />
     </Tabs>
   );
 }

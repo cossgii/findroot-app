@@ -1,9 +1,9 @@
-import { useMemo } from 'react';
-import { ViewStyle } from 'react-native';
-import { WebView } from 'react-native-webview';
-import type { WebViewMessageEvent } from 'react-native-webview';
+import { useMemo } from "react";
+import { ViewStyle } from "react-native";
+import { WebView } from "react-native-webview";
+import type { WebViewMessageEvent } from "react-native-webview";
 
-const KAKAO_KEY = process.env.EXPO_PUBLIC_KAKAO_APP_KEY ?? '';
+const KAKAO_KEY = process.env.EXPO_PUBLIC_KAKAO_APP_KEY ?? "";
 
 export type MapMarker = {
   id: string;
@@ -22,14 +22,23 @@ type Props = {
   style?: ViewStyle;
 };
 
+const BASE_URL = "https://www.findroot.kr";
+function toScriptJson(value: unknown) {
+  return JSON.stringify(value).replace(/</g, "\\u003c");
+}
+
+function isAllowedNavigation(url: string) {
+  return url.startsWith(BASE_URL) || url === "about:blank";
+}
+
 function buildHtml(
   center: { lat: number; lng: number },
   level: number,
   markers: MapMarker[],
   polyline: { lat: number; lng: number }[],
 ) {
-  const markersJson = JSON.stringify(markers);
-  const polylineJson = JSON.stringify(polyline);
+  const markersJson = toScriptJson(markers);
+  const polylineJson = toScriptJson(polyline);
 
   return `<!DOCTYPE html>
 <html>
@@ -109,16 +118,24 @@ export default function KakaoMap({
   style,
 }: Props) {
   const source = useMemo(
-    () => ({ html: buildHtml(center, level, markers, polyline), baseUrl: 'https://www.findroot.kr' }),
+    () => ({
+      html: buildHtml(center, level, markers, polyline),
+      baseUrl: BASE_URL,
+    }),
     // JSON.stringify로 깊은 비교 — center/markers 객체 참조가 달라도 내용 같으면 리로드 안 함
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [JSON.stringify(center), level, JSON.stringify(markers), JSON.stringify(polyline)],
+    [
+      JSON.stringify(center),
+      level,
+      JSON.stringify(markers),
+      JSON.stringify(polyline),
+    ],
   );
 
   function handleMessage(e: WebViewMessageEvent) {
     try {
       const msg = JSON.parse(e.nativeEvent.data);
-      if (msg.type === 'MARKER_CLICK') onMarkerPress?.(msg.id);
+      if (msg.type === "MARKER_CLICK") onMarkerPress?.(msg.id);
     } catch {}
   }
 
@@ -129,7 +146,8 @@ export default function KakaoMap({
       onMessage={handleMessage}
       javaScriptEnabled
       domStorageEnabled
-      originWhitelist={['*']}
+      originWhitelist={["*"]}
+      onShouldStartLoadWithRequest={(req) => isAllowedNavigation(req.url)}
       scrollEnabled={false}
     />
   );

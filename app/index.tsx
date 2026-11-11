@@ -12,7 +12,7 @@ export default function Index() {
   useEffect(() => {
     getStoredUser().then((user) => {
       if (user) setUser(user);
-      router.replace('/(tabs)');
+      router.replace('/districts/all');
     });
   }, []);
 
