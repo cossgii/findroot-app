@@ -20,7 +20,11 @@ export async function login(loginId: string, password: string): Promise<AppUser>
 }
 
 export async function logout(): Promise<void> {
-  await unregisterPushToken();
+  try {
+    await unregisterPushToken();
+  } catch (e) {
+    console.error('[FCM]', e);
+  }
   await clearToken();
   await clearStoredUser();
 }

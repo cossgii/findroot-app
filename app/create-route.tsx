@@ -76,7 +76,7 @@ export default function CreateRouteScreen() {
   }
 
   return (
-    <SafeAreaView style={styles.safe} edges={['top']}>
+    <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
           <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
@@ -154,7 +154,7 @@ export default function CreateRouteScreen() {
         </ScrollView>
 
         <Modal visible={showPicker} animationType="slide" onRequestClose={handleClosePicker}>
-          <SafeAreaView style={{ flex: 1, backgroundColor: colors.bg.white }} edges={['top']}>
+          <SafeAreaView style={{ flex: 1, backgroundColor: colors.bg.white }} edges={['top', 'bottom']}>
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>{pendingPlace ? '레이블 선택' : '장소 선택'}</Text>
               <TouchableOpacity onPress={handleClosePicker}>

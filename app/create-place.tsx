@@ -38,7 +38,7 @@ export default function CreatePlaceScreen() {
   const mapCenter = selected ? { lat: selected.latitude, lng: selected.longitude } : DEFAULT_CENTER;
 
   return (
-    <SafeAreaView style={styles.safe} edges={['top']}>
+    <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
           <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>

@@ -35,7 +35,7 @@ export default function SignupScreen() {
   }
 
   return (
-    <SafeAreaView style={{ flex: 1 }} edges={['top']}>
+    <SafeAreaView style={{ flex: 1 }} edges={['top', 'bottom']}>
     <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
       <Text style={styles.title}>회원가입</Text>
       <Input placeholder="이름" value={form.name} onChangeText={set('name')} style={styles.mb} />

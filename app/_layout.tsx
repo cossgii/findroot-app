@@ -1,4 +1,4 @@
-﻿import { useEffect, useRef } from 'react';
+﻿import { useEffect, useState } from 'react';
 import { Stack, useRouter } from 'expo-router';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Provider as JotaiProvider, useAtomValue, useSetAtom } from 'jotai';
@@ -42,12 +42,13 @@ function navigateFromNotification(router: ReturnType<typeof useRouter>, data: Re
 function NotificationListener() {
   const router = useRouter();
   const authReady = useAtomValue(authReadyAtom);
-  const pendingData = useRef<Record<string, string> | null>(null);
+  const [pendingData, setPendingData] = useState<Record<string, string> | null>(null);
 
   useEffect(() => {
     Notifications.getLastNotificationResponseAsync().then((response) => {
       if (!response) return;
-      pendingData.current = response.notification.request.content.data as Record<string, string>;
+      setPendingData(response.notification.request.content.data as Record<string, string>);
+      Notifications.clearLastNotificationResponseAsync();
     });
 
     const sub = Notifications.addNotificationResponseReceivedListener((response) => {
@@ -58,11 +59,11 @@ function NotificationListener() {
   }, []);
 
   useEffect(() => {
-    if (authReady && pendingData.current) {
-      navigateFromNotification(router, pendingData.current);
-      pendingData.current = null;
+    if (authReady && pendingData) {
+      navigateFromNotification(router, pendingData);
+      setPendingData(null);
     }
-  }, [authReady]);
+  }, [authReady, pendingData]);
 
   return null;
 }
