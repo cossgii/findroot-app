@@ -6,10 +6,10 @@
 ## 화면
 <table>
   <tr>
-    <td align="center"><img src="https://github.com/user-attachments/assets/dddd4825-bee8-4a6e-a1ef-1ff1ad8bd334" width="200" /><br />지도 탐색</td>
-    <td align="center"><img src="https://github.com/user-attachments/assets/45c53333-62fd-43a9-89e0-41e74f81dbd8" width="200" /><br />장소 상세</td>
-    <td align="center"><img src="https://github.com/user-attachments/assets/d301738e-00ae-4150-af29-6fde53491c36" width="200" /><br />루트 만들기</td>
-    <td align="center"><img src="https://github.com/user-attachments/assets/e904f55e-047b-4e91-83ab-274cc7aba0a9" width="200" /><br />푸시 알림</td>
+    <td align="center"><img src="https://github.com/user-attachments/assets/e904f55e-047b-4e91-83ab-274cc7aba0a9" width="200" /><br />지도 탐색</td>
+    <td align="center"><img src="https://github.com/user-attachments/assets/d301738e-00ae-4150-af29-6fde53491c36" width="200" /><br />장소 상세</td>
+    <td align="center"><img src="https://github.com/user-attachments/assets/45c53333-62fd-43a9-89e0-41e74f81dbd8" width="200" /><br />루트 만들기</td>
+    <td align="center"><img src="https://github.com/user-attachments/assets/dddd4825-bee8-4a6e-a1ef-1ff1ad8bd334" width="200" /><br />푸시 알림</td>
   </tr>
 </table>
 
